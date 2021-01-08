@@ -67,7 +67,7 @@ runEdgeR = function(DE_input,design, contrast,keep,folder_output, subfolder){
   
   path = paste0(base,'qlf','.Robj')
   save(qlf,file= path)
-  #qlf = loadRData(path)
+  qlf = loadRData(path)
   
   path = paste0(base, 'DE_EdgeR ',ident1,' Vs ', ident2,'.csv')
   print(path)

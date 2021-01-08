@@ -17,7 +17,7 @@ LoadHarmonyData = function(metaData, sampleParam_combine){
   filename_sampleParam <- paste0('/home/sujwary/Desktop/scRNA/Data/sample_','Combine','_parameters.xlsx')
   sampleParam_combine <- read_excel(filename_sampleParam)
   
-  downsample = read.csv('/home/sujwary/Desktop/scRNA/Output/CompareIntegration/DownSampleCells.csv')
+  #downsample = read.csv('/home/sujwary/Desktop/scRNA/Output/CompareIntegration/DownSampleCells.csv')
   downsample  = NA #downsample$x
   
   

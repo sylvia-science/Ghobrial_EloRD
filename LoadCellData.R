@@ -23,6 +23,11 @@ load_emptyDrops <- function(data) {
     
     folder = paste0('/home/sujwary/Desktop/scRNA/Output/EmptyCells/',sample_name,'/')
     file_name = paste0(folder,'emptyDrops','.csv')
+    if(!file.exists(file_name)){
+      print(file_name)
+      print('Does not exist')
+      next
+    }
     br_e = read.csv(file_name)
     br_e = br_e[!is.na(br_e$is_cell),]
 
@@ -124,15 +129,29 @@ load_CellLabel <- function(data) {
 }
 
 addMetaData = function(data, metaData){
-  data@meta.data[,colnames(metaData)] = ''
+  #browser()
+  #data@meta.data[,colnames(metaData)] = ''
   for (sample in unique(data$sample)){
+    print(sample)
     #browser()
     for (colname in colnames(metaData)){
+      #print(colname)
+      if (colname == 'Dexa or not' & sample == 'GL1080BM'){
+        
+        #browser()
+      }
       #browser()
       metaData_sample_val = metaData[,colname][metaData$Sample == sample,]
       metaData_sample_val = metaData_sample_val[[1]]
-      
-      data@meta.data[,colname][data$sample == sample] = metaData_sample_val
+      if(length(metaData_sample_val) == 0){
+        next
+      }
+      if ( !(colname %in% colnames(data@meta.data)) ){
+        data@meta.data[,colname] = ''
+      }
+      if (!is.na(metaData_sample_val )){
+        data@meta.data[,colname][data$sample == sample] = metaData_sample_val
+      }
     }
   }
   

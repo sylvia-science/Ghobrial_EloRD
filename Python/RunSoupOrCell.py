@@ -53,12 +53,14 @@ for i in range(0,(metaData.shape[0])):
         print(command)
         os.system(command)
 
+# Convert to maf
 
 for i in range(0,(metaData.shape[0])):
     sample_name = metaData['Sample'].iloc[i]
     print(sample_name)
     
     output = base + sample_name + '_demux_data/'
+    
     command = 'perl  /disk2/Projects/Code/mskcc-vcf2maf-47c4a18/vcf2maf.pl '
     command = command + '--input-vcf ' + output + 'souporcell_merged_sorted_vcf.vcf '
     command = command + '--output-maf ' +  output + sample_name + '.vep.maf '

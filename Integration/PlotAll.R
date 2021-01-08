@@ -174,11 +174,7 @@ plotAll = function(data,folder,sample_name,sampleParam,label_TF,
   #png(file=pathName,width=600, height=350)
   #print(FeaturePlot(data,pt.size = 0.5, features = c("percent.mt")))
   #dev.off()
-  
-  pathName <- paste0(filepath_cluster,'percentMT','.png')
-  png(file=pathName,width=600, height=600)
-  print(FeaturePlot(data,pt.size = pt.size, features = c("percent.mt")))
-  dev.off()
+
   
   pathName <- paste0(filepath_cluster,'nCount_RNA','.png')
   png(file=pathName,width=600, height=600)

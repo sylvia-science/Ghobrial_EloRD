@@ -11,17 +11,24 @@ source('/home/sujwary/Desktop/scRNA/Code/Functions.R')
 
 filename_metaData = '/home/sujwary/Desktop/scRNA/Data/EloRD Meta.xlsx'
 metaData = read_excel(filename_metaData)
-#metaData = metaData[metaData$Run== 1,]
-metaData = metaData[metaData$`Sample Type` == 'PBMC',]
-metaData = metaData[rowSums(is.na(metaData)) != ncol(metaData), ]
+metaData = metaData[metaData$Run== 1,]
+#metaData = metaData[metaData$`Sample Type` == 'PBMC',]
+#metaData = metaData[rowSums(is.na(metaData)) != ncol(metaData), ]
 
 filename_sampleParam <- paste0('/home/sujwary/Desktop/scRNA/Data/sample','_parameters.xlsx')
 sampleParam <- read_excel(filename_sampleParam)
 
 
 for (i in 1:nrow(metaData) ){
+
   sample_name = metaData$Sample[i]
   print(sample_name)
+  
+  file = paste0('/home/sujwary/Desktop/scRNA/Output/EmptyCells/',sample_name,'/', 'emptyDrops','.csv')
+  if(file.exists( file)){
+    print('File already exists')
+    next
+  }
   #Scrublet_threshold = sampleParam$Scrublet_threshold[sampleParam['Sample'] == sample_name]
   #print(Scrublet_threshold)
   

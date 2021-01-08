@@ -317,7 +317,6 @@ ScranNorm = function(data){
   data_out = data
 
   colnames(data_i_sc@assays@data@listData[["logcounts"]]) = colnames(counts)
-  # DOUBLE CHECK
   data_out@assays[["RNA"]]@data = as.matrix(data_i_sc@assays@data@listData[["logcounts"]])
   data_out@assays[["RNA"]]@scale.data = as.matrix(data_i_sc@assays@data@listData[["logcounts"]]) # need to find out how to put an empty placeholder here
   size_factor_list = sizeFactors(data_i_sc)

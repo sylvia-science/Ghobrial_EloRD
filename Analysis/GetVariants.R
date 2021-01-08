@@ -22,8 +22,12 @@ metaData = metaData[metaData$Run== 1 || metaData$`Sample Type` == 'PBMC',]
 filename_sampleParam <- paste0('/home/sujwary/Desktop/scRNA/Data/sample_','Combine','_parameters.xlsx')
 sampleParam_combine <- read_excel(filename_sampleParam)
 
+bed <- read.table("/disk2/Projects/EloRD/Data/coverage/GL1003BM_coverage.bed",header = FALSE, sep="\t",stringsAsFactors=FALSE, quote="")
 
+colnames(bed) = c('chrom','chromStart','chromEnd','ref','alt','score','strand',
+                  'thickStart','thickEnd','itemRgb','blockCount','blockSizes','blockStarts')
 
+max(bed)
 data = LoadHarmonyData (metaData, sampleParam_combine)
 data_label = data[[1]]
 sample_list = unique(data_label$sample )
@@ -33,6 +37,8 @@ sample_list = metaData$Sample
 plot = DimPlot(data_label,pt.size = 0.7, reduction = "umap",label = TRUE,
                label.size = 6)
 print(plot)
+
+
 
 maf_genes_unique = unique(maf_all_meta$Hugo_Symbol)
 maf_genes_unique  [ !(maf_genes_unique %in% rownames(data_label) )]
@@ -81,9 +87,7 @@ for (i in 1:length(sample_list)){
   if ( !file.exists(paste0(base, sample, '_out_cell_barcodes', str , '.csv'))){
     #next
   }
-  #data_label = data_label[,data_label$sample == sample]
-  #DimPlot(data_label,pt.size = 0.7, reduction = "umap",label = TRUE,label.size = 8)
-  
+
   # barcodes
  
   barcodes = read.csv(paste0(base, sample, '_out_cell_barcodes',str,'.csv'), header = F)
