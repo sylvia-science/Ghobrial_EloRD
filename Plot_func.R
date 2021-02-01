@@ -237,7 +237,7 @@ PlotKnownMarkers = function(data,
         #browser()
         if (prefix_logFC){
           
-          logFC = cell_features$avg_logFC[cell_features$gene==gene ]
+          logFC = cell_features$avg_logFC[cell_features$Markers==gene ]
          
           prefix = paste0('logFC_',  formatC(logFC, digits = 2, format = "f") ,'_')
         }else{
@@ -1146,7 +1146,7 @@ StackedVlnPlot<- function(obj, features,
 }
 
 
-StackedVlnPlotHelper = function(data,gene_list,folder_heatMap,filename){
+StackedVlnPlotHelper = function(data,gene_list,folder_heatMap,filename, width,height){
   #browser()
   dir.create(folder_heatMap,recursive = T)
   gene_list = gene_list[!is.na(gene_list)]
@@ -1156,7 +1156,7 @@ StackedVlnPlotHelper = function(data,gene_list,folder_heatMap,filename){
       theme(plot.title = element_text(hjust = 0.5)) +
       theme(plot.title = element_text(size=24))
     plot = plot + theme(
-      axis.text= element_text(color="black", size=32))
+      axis.text= element_text(color="black", size=12))
     
     
     folder_heatMap = gsub('CD14+ Mono','CD14M',folder_heatMap, fixed = T)
@@ -1179,7 +1179,7 @@ StackedVlnPlotHelper = function(data,gene_list,folder_heatMap,filename){
     pathName = gsub("Poor Response","PR",pathName,fixed = T)
     
     print(pathName)
-    png(file=pathName,width=2000, height=3000,res=100)
+    pdf(file=pathName,width=width, height=height)
     print(plot)
     dev.off()
   }
@@ -1440,8 +1440,8 @@ PlotProportions = function(data){
 
 
 
-VolcanoPlotHelper = function(data_input_bl_long,var1,var2,base){
-  browser()
+VolcanoPlotHelper = function(data_input_bl_long,var1,var2,base, str = ''){
+  #browser()
   dir.create(base)
   volmat <- matrix(nrow=length(unique(data_input_bl_long$Cell_Type)), ncol=6)
   colnames(volmat) <- c("Cell_Type","Wilcoxon_p", "FDR", "mean_var1", "mean_var2", "LFC")
@@ -1473,7 +1473,7 @@ VolcanoPlotHelper = function(data_input_bl_long,var1,var2,base){
   colnames[colnames == 'mean_var1'] = paste0('mean_',var1)
   colnames[colnames == 'mean_var2'] = paste0('mean_',var2)
   colnames(volmat) = colnames
-  path = paste0(base,'volcano_data_',var1,'Vs',var2,'.csv')
+  path = paste0(base,'volcano_data_',var1,'Vs',var2,str,'.csv')
   print(path)
   write.csv(volmat,path)
   
@@ -1481,19 +1481,28 @@ VolcanoPlotHelper = function(data_input_bl_long,var1,var2,base){
   crange <- t(matrix(c("#009BF4","#EAEAEA","#FC5A5A","#EAEAEA","#EAEAEA","#EAEAEA"),ncol=2))
   g <- rasterGrob(crange, width=unit(1,"npc"), height = unit(1,"npc"),interpolate = TRUE)
   
+  fontSize = 12
   xmin = -4
   xmax = 4
-  pdf(paste0(base,'Composition Volcano Plot_',var1,'Vs',var2,'.pdf'))
-  plot = ggplot(volmat,aes(x=LFC, y=-log10(Wilcoxon_p)), size=4) +
-    annotation_custom(g, xmin=xmin, xmax=xmax, ymin=-.2, ymax=3) +
+  pdf(paste0(base,'Composition Volcano Plot_',var1,'Vs',var2,str,'.pdf'), width = 6,height = 6)
+  plot = ggplot(volmat,aes(x=LFC, y=-log10(Wilcoxon_p)), size=12) +
+    annotation_custom(g, xmin=xmin , xmax=xmax, ymin=-.2, ymax=6) +
     geom_point() +
-    xlim(xmin,xmax) + geom_vline(xintercept = 0, linetype="dashed", alpha=0.5, color="black")+
-    xlab("Log fold-change")+ylab("-log10 p-value") + theme(panel.grid.major = element_blank(), 
-                                                           panel.grid.minor = element_blank(),panel.background = element_blank(), 
-                                                           axis.line = element_line(colour = "black")) + 
+    xlim(xmin + 0.5,xmax - 0.5) + geom_vline(xintercept = 0, linetype="dashed", alpha=0.5, color="black")+
+    xlab("Log fold-change")+ylab("-log10 p-value") + 
+    theme(panel.grid.major = element_blank(), 
+      panel.grid.minor = element_blank(),
+      panel.background = element_blank(), 
+      axis.line = element_line(colour = "black")) + 
     geom_text_repel(aes(x=LFC, y=-log10(Wilcoxon_p), 
                         label=Cell_Type))+geom_hline(yintercept = 1.3, 
                                                      linetype = "dashed", alpha = 0.5)
+  plot = plot + theme(
+    legend.title = element_text( size = fontSize),
+    legend.text = element_text( size = fontSize))
+  plot = plot +theme(axis.text=element_text(size=fontSize),
+                     axis.title=element_text(size=fontSize,face="bold"))
+  
   print(plot)
   dev.off()
   
