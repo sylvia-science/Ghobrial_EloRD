@@ -19,9 +19,9 @@ metaData = metaData[metaData['Sample Type'] == 'PBMC']
 #metaData =metaData['Run'] == 1
 filename_sample_parameters = '/home/sujwary/Desktop/scRNA/Data/sample_parameters.xlsx'
 sample_parameters = pd.read_excel(filename_sample_parameters)
-i = 2
+i = 8
 # i = 18 doesn't have auto estimate
-for i in range(0,(metaData.shape[0])):
+for i in range(8,(metaData.shape[0])):
     
     #i = 3
     sample_name = metaData['Sample'].iloc[i]

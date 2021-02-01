@@ -5,19 +5,17 @@ library(ggrepel)
 library("grid")
 
 source('~/Desktop/scRNA/Code/Plot_func.R')
-base = '/home/sujwary/Desktop/scRNA/Output/Harmony/AllSamples/Batch_Sample_Kit/Subcluster/T Cell/Cluster/PCA30/res3.5/Plots/'
 
 
 base = paste0(filepath_cluster,'Plots/')
 
-base = paste0('/home/sujwary/Desktop/scRNA/Output/Harmony/AllSamples/Batch_Sample_Kit/Cluster/PCA30/res3/',
-'Plots/Paper/Proportions/')
+#base = paste0('/home/sujwary/Desktop/scRNA/Output/Harmony/AllSamples/Batch_Sample_Kit/Cluster/PCA30/res3/',
+#              'Plots/Paper/Proportions/')
 dir.create(base)
 
 Idents(data_harmony_run_label_remove)[Idents(data_harmony_run_label_remove) == 'CD8+ T-cell'] = 'T-cell'
 data_input  = as.data.frame.matrix(table(data_harmony_run_label_remove$sample,Idents(data_harmony_run_label_remove) ))
 data_input  = as.data.frame.matrix(table(data_run_subset_label_remove$sample,Idents(data_run_subset_label_remove) ))
-
 
 
 #Import metadata
@@ -76,7 +74,7 @@ pdf(paste0(base,celltype,".pdf"))
 plot = ggplot(data_input_bl_long) + geom_boxplot(aes(x=Type,y=Proportion, fill=Cell_Type))  +
   #scale_fill_manual(values=c("#D5BF98","#AF7366","#8B6C4F","#CDD4E4","#E3C78F","#78A8D1"))+ 
   theme_bw() + xlab("") + theme(axis.text.x=element_text(size=12))#+
-  #theme(legend.justification = c(1, 1), legend.position = c(1, 1),legend.box.margin=margin(c(1,1,1,1)))
+#theme(legend.justification = c(1, 1), legend.position = c(1, 1),legend.box.margin=margin(c(1,1,1,1)))
 print(plot)
 dev.off()
 
@@ -90,8 +88,8 @@ celltype = 'DC'
 
 if (celltype == 'Mono'){
   Ident_order = c('SELL+ CD14+ Mono','sMono','MIP1a+ CD14+ Mono','TGFb1+ CD14+ Mono',
-                'sCD14+ Mono','IFN+ Mono','CD14+ CD16+ Mono','CD16+ Mono')
-
+                  'sCD14+ Mono','IFN+ Mono','CD14+ CD16+ Mono','CD16+ Mono')
+  
 }
 if (celltype == 'DC'){
   Ident_order = c('cDC1','cDC2','prDC', 'sDC')

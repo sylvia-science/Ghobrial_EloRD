@@ -21,11 +21,11 @@ sampleParam <- read_excel(filename_sampleParam)
 
 #pbmc.data <- Read10X(data.dir = '/home/sujwary/Downloads/pbmc3k_filtered_gene_bc_matrices/filtered_gene_bc_matrices/hg19/')
 #pbmc <- CreateSeuratObject(counts = pbmc.data, project = "pbmc3k", min.cells = 3, min.features = 200)
-i = 4
+i = 9
 
 #######################################
 # Soup + MT
-for (i in 3:nrow(metaData) ){
+for (i in 9:nrow(metaData) ){
 #for (i in 1 ){
   sample_name = metaData$Sample[i]
   print(sample_name)

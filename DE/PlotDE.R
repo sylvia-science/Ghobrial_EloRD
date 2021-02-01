@@ -1,10 +1,12 @@
+data_input = data_run_subset_label_remove
+data_input = ScaleData(data_input, features = rownames(data_input))
+data_input = renameCells(data_input,idents = c('cDC1','cDC2'),newident = 'DC')
+data_input = renameCells(data_input,idents = c('CD14+CD16+ Mono'),newident = 'CD16+ Mono')
 
-data_merge_run_label = ScaleData(data_merge_run_label, features = rownames(data_merge_run_label))
+data_input$Treatment[data_input$Treatment == 'baseline'] = 'Baseline'
 
-#data_merge_run_label <- NormalizeData(data_merge_run_label, normalization.method = "LogNormalize", scale.factor = 10000)
-
-data_merge_run_label = renameCells(data_merge_run_label,idents = c('cDC1','cDC2'),newident = 'DC')
-data_merge_run_label = renameCells(data_merge_run_label,idents = c('CD14+CD16+ Mono'),newident = 'CD16+ Mono')
+plot = DimPlot(data_input,pt.size = 0.7, reduction = "umap",label = TRUE,label.size = 8)
+print(plot)
 
 library(fgsea)
 pathways.hallmark <- gmtPathways('/home/sujwary/Desktop/scRNA/Data/GSEA/h.all.v7.2.symbols.gmt')
@@ -19,9 +21,9 @@ font_size= 32
 
 label_size = 12
 
-gene_height = 50
+gene_height = 80
 
-celltype_list = sort(unique(as.character(Idents(data_merge_run_label))))
+celltype_list = sort(unique(as.character(Idents(data_input))))
 for (celltype in celltype_list){
   print(celltype)
 }
@@ -30,10 +32,12 @@ for (celltype in celltype_list){
 DE_type = 'DESeq2'
 DE_type = 'EdgeR'
 
-time1 = 'baseline'
-time2 = 'C9D1'
+time1 = 'Baseline'
+time2 = 'NBM'
 
 base = paste0(filepath_cluster,'/DE/',DE_type,'/Patient/', time1,' Vs ',time2,'/')
+base = paste0(filepath_cluster,'/DE/',DE_type,'/')
+
 #base = paste0(filepath_cluster,'/DE/',DE_type,'/Patient/C9D1 Dexa Vs C9D1 No Dexa/')
 
 
@@ -45,10 +49,11 @@ celltype_list=  c('CD14+ Mono','TRM','Naive CD4+ T-cell','Naive CD8+ T-cell','GZ
                   'CD16+ Mono','sMono','Cytotoxic NK','Plasma Cell')
 
 
-celltype_list=  c('Intermediate CD4+ T-cell')
+celltype_list=  c('NFkB-high')
 celltype = celltype_list[1]
 
 boxplot_TF = F
+
 for (celltype in celltype_list){
   print(celltype)
   #celltype = 'eTreg'
@@ -62,7 +67,7 @@ for (celltype in celltype_list){
   
   
   
-  DE_input = data_merge_run_label
+  DE_input = data_input
   #DE_input = renameCells(DE_input,idents = c('cDC1','cDC2'),newident = 'DC')
   #DE_input = renameCells(DE_input,idents = c('TIMP1+ CD14+ Mono','SELL+ CD14+ Mono'),
   #                       newident = 'CD14+ Mono')
@@ -76,6 +81,7 @@ for (celltype in celltype_list){
   
   DE_input = DE_input[,DE_input$DE_ident %in% c(ident1,ident2)]
  
+  DE_input$DE_ident = factor(as.character(DE_input$DE_ident), levels =c(ident1,ident2))
   
   path = paste0(base, subfolder,'/')
   filename = paste0(path,'/DE_',DE_type,' ',subfolder,'.csv')
@@ -139,14 +145,15 @@ for (celltype in celltype_list){
   }
   if (nrow(res_neg) > max_gene){
     
-    res_neg = res_neg[( nrow(res) - max_gene):nrow(res),]
-    res_neg = res_neg[rowSums(is.na(res_pos)) != ncol(res_pos),]
+    res_neg = res_neg[( nrow(res_neg) - max_gene):nrow(res_neg),]
+    res_neg = res_neg[rowSums(is.na(res_neg)) != ncol(res_neg),]
     
   }
   res = res[res$gene %in% c(res_pos$gene, res_neg$gene),]
   res = unique(res)
   res = res[rowSums(is.na(res)) != ncol(res),]
   
+  res_pos = res_pos[order(-res_pos$log2FoldChange),]
   
   print('pos')
   print(res$gene[res$log2FoldChange > 0])
@@ -154,7 +161,7 @@ for (celltype in celltype_list){
   print('neg')
   print(res$gene[res$log2FoldChange < 0])
   
-  next
+  #next
   ## Boxplot
   if (boxplot_TF){
     for (gene in res$gene){
@@ -191,10 +198,24 @@ for (celltype in celltype_list){
 
   
   ## Heatmap
-  filename <- paste0(path,paste0('HeatMap','.png'))
-  png(file=filename,width=2000, height=gene_height*nrow(res),res = 100)
+  filename <- paste0(path,paste0('HeatMap_pos','.png'))
+  png(file=filename,width=2000, height=gene_height*nrow(res_pos),res = 100)
   
-  plot = DoHeatmap(DE_input, features = res$gene, group.by = 'DE_ident',size = label_size)
+  plot = DoHeatmap(DE_input, features = res_pos$gene, group.by = 'DE_ident',size = label_size)
+  plot = plot + theme(
+    axis.title.x = element_text(color="black", size=font_size ),
+    axis.title.y = element_text(color="black", size=font_size),
+    axis.text= element_text(color="black", size=font_size),
+    legend.text=element_text(size=font_size),
+    legend.title=element_text(size=font_size),
+    text = element_text(size = 20))
+  print(plot)
+  dev.off()
+  
+  filename <- paste0(path,paste0('HeatMap_neg','.png'))
+  png(file=filename,width=2000, height=gene_height*nrow(res_neg),res = 100)
+  
+  plot = DoHeatmap(DE_input, features = res_neg$gene, group.by = 'DE_ident',size = label_size)
   plot = plot + theme(
     axis.title.x = element_text(color="black", size=font_size ),
     axis.title.y = element_text(color="black", size=font_size),
@@ -312,7 +333,44 @@ for (celltype in celltype_list){
     text = element_text(size = 20))
   print(plot)
   dev.off()
+  ## Plot sex
   
+  
+  filename <- paste0(path,paste0('HeatMap','_gender_',ident1,'.png'))
+  png(file=filename,width=2000, height=gene_height*nrow(res),res = 100)
+  
+  plot = DoHeatmap(DE_input_ident1, features = res$gene, group.by = 'Gender',size = label_size)
+  plot = plot + theme(
+    axis.title.x = element_text(color="black", size=font_size ),
+    axis.title.y = element_text(color="black", size=font_size),
+    axis.text= element_text(color="black", size=font_size),
+    legend.text=element_text(size=font_size),
+    legend.title=element_text(size=font_size),
+    text = element_text(size = 20))
+  
+  print(plot)
+  dev.off()
+  
+  filename <- paste0(path,paste0('HeatMap','_gender_',ident2,'.png'))
+  png(file=filename,width=2000, height=gene_height*nrow(res),res = 100)
+  
+  plot = DoHeatmap(DE_input_ident2, features = res$gene, group.by = 'Gender',size = label_size)
+  plot = plot + theme(
+    axis.title.x = element_text(color="black", size=font_size ),
+    axis.title.y = element_text(color="black", size=font_size),
+    axis.text= element_text(color="black", size=font_size),
+    legend.text=element_text(size=font_size),
+    legend.title=element_text(size=font_size),
+    text = element_text(size = 20))
+  
+  print(plot)
+  dev.off()
+  
+  ###
+ 
+  
+  ##
+  next
   # All time points
   ident1 = paste0('NBM ',celltype)
   ident2 = paste0('baseline ',celltype)

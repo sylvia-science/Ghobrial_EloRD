@@ -187,6 +187,8 @@ plotAll = function(data,folder,sample_name,sampleParam,label_TF,
   #print(FeaturePlot(data,pt.size = 0.5, features = c("S.Score")))
   #dev.off()
 
+ 
+  
   
   #browser()
   
@@ -252,6 +254,23 @@ plotAll = function(data,folder,sample_name,sampleParam,label_TF,
   }
   #browser()
   
+  # Plot larger sample plot
+  group = 'sample'
+  pathName <- paste0(filepath_cluster,paste0('ClusterUmap', '_PCA',PCA_dim,'_res',resolution_val,'_GroupBy',group,'_wide.png'))
+  png(file=pathName,width=3000, height=1000)
+  plot = DimPlot(data,pt.size = pt.size, reduction = "umap",
+                 label = F,group.by  = group)
+  
+  plot = plot + theme(
+    axis.title.x = element_text(color="black", size=24 ),
+    axis.title.y = element_text(color="black", size=24),
+    axis.text= element_text(color="black", size=24),
+    legend.text=element_text(size=24),
+    legend.title=element_text(size=24),
+    text = element_text(size = 20)
+  )
+  print(plot)
+  dev.off()
   ##################################
   
   ##############################

@@ -52,7 +52,7 @@ for (i in 1:nrow(metaData) ){
   scds_doublet = doublet_log > doublet_quantile_log
   write.csv(scds_doublet, file=paste0(folder_output, 'Doublet','.csv'))
   
-  #next
+  
   data_i_run$cxds_score = sce$cxds_score
   data_i_run$bcds_score = sce$bcds_score
   data_i_run$hybrid_score = sce$hybrid_score
@@ -81,7 +81,7 @@ for (i in 1:nrow(metaData) ){
   print(FeaturePlot(data_i_run,pt.size =pt.size, features = c("hybrid_score")))
   dev.off()
   
-  
+  next
   pathName = paste0(folder_output,sample_name,'_Pre_Doublet_Umap','_percent.mt','.png')
   png(file=pathName,width=1000, height=1000)
   print(FeaturePlot(data_i_run,pt.size =pt.size, features = c("percent.mt")))

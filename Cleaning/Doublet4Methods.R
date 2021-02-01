@@ -23,7 +23,7 @@ sampleParam <- read_excel(filename_sampleParam)
 i = 1
 
 # Soup + MT + Doublet
-for (i in 3:nrow(metaData) ){
+for (i in 62:nrow(metaData) ){
   sample_name = metaData$Sample[i]
   print(sample_name)
   percent_mt = sampleParam$percent_mt_min[sampleParam['Sample'] == sample_name]
@@ -148,7 +148,7 @@ for (i in 3:nrow(metaData) ){
   png(file=pathName,width=1000, height=1000)
   print(FeaturePlot(data_i_run,pt.size =pt.size, reduction = "umap", features = 'nFeature_RNA'))
   dev.off()
-  next
+  #next
   
   folder_feature = paste0(folder,'Featureplots/Pre_Doublet/' )
   dir.create(folder_feature,recursive = T)

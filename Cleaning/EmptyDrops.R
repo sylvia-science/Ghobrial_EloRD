@@ -14,12 +14,12 @@ metaData = read_excel(filename_metaData)
 metaData = metaData[metaData$Run== 1,]
 #metaData = metaData[metaData$`Sample Type` == 'PBMC',]
 #metaData = metaData[rowSums(is.na(metaData)) != ncol(metaData), ]
+metaData = metaData[metaData$`10X kit` == 'Microwell-seq',]
 
 filename_sampleParam <- paste0('/home/sujwary/Desktop/scRNA/Data/sample','_parameters.xlsx')
 sampleParam <- read_excel(filename_sampleParam)
-
-
-for (i in 1:nrow(metaData) ){
+i = 2
+for (i in 3:nrow(metaData) ){
 
   sample_name = metaData$Sample[i]
   print(sample_name)
@@ -29,25 +29,63 @@ for (i in 1:nrow(metaData) ){
     print('File already exists')
     next
   }
-  #Scrublet_threshold = sampleParam$Scrublet_threshold[sampleParam['Sample'] == sample_name]
-  #print(Scrublet_threshold)
+
   
-  filename = paste("/home/sujwary/Desktop/scRNA/Data/",sample_name,"_raw_feature_bc_matrix.h5",sep = "")
-  data_i_raw = Read10X_h5(filename, use.names = TRUE, unique.features = TRUE)
-  data_i_raw = CreateSeuratObject(counts = data_i_raw, project = "BM", min.cells = 3, min.features = 1)
-  
+  HCL_list = c('Adult-Bone-Marrow1','Adult-Bone-Marrow2',
+               'Adult-Peripheral-Blood1','Adult-Peripheral-Blood2','Adult-Peripheral-Blood3','Adult-Peripheral-Blood4')
+  if (sample_name %in% HCL_list){
+    filename = paste("/home/sujwary/Desktop/scRNA/Data/",sample_name,"_dge.txt",sep = "")
+    
+    set  = ' '
+    data_i_raw = read.table(file = filename,row.names = 1,header = T, sep = '')
+    if (ncol(data_i_raw) == 1){
+      data_i_raw = read.table(file = filename,row.names = 1,header = T, sep = ',')
+    }
+    nrow(data_i_raw)
+    ncol(data_i_raw)
+    data_i_raw = CreateSeuratObject(data_i_raw,  project = "BM",min.cells = 3, min.features = 1)
+    
+  }else{
+    filename = paste(data_folder,sample_name,"_raw_feature_bc_matrix.h5",sep = "")
+    exists(filename)
+    data_i_raw = Read10X_h5(filename, use.names = TRUE, unique.features = TRUE)
+    data_i_raw = CreateSeuratObject(counts = data_i_raw, project = "BM", min.cells = 3, min.features = 1)
+  }
   colSum_list = colSums(data_i_raw ) # Needs to be from Matrix library
+  mincount = 100
   keep = colSum_list >= 100
+  print(sum(keep))
+  print(sum(!keep))
+  if (sum(!keep) < 3){
+    mincount = 300
+    
+  }
+  countSum_min = min(colSum_list)
+  #next
+  keep = colSum_list >=mincount
   data_i_filtered = data_i_raw[,keep]
   
-  
+  if (countSum_min > 400){
+    rownames = colnames(data_i_filtered)
+    br_e = data.frame(rownames)
+    br_e$is_cell <- T
+    br_e$ncount = data_i_filtered$nCount_RNA
+    br_e$LogProb = 0
+    br_e$FDR  = 1
+    
+    folder = paste0('/home/sujwary/Desktop/scRNA/Output/EmptyCells/',sample_name,'/')
+    dir.create(folder, recursive =T)
+    write.csv(br_e, file = paste0(folder,'emptyDrops','.csv'),row.names = FALSE)
+    
+    next
+  }
   #row_val = rownames(data_i_filtered)
   #col_val = colnames(data_i_filtered)
   
   ## Empty drops
   counts= data_i_raw@assays[["RNA"]]@counts
-  br.out = barcodeRanks(counts,lower=100)
-  e.out = emptyDrops(counts,lower=100) # Outputs NAs for cell with lower than 100
+  br.out = barcodeRanks(counts,lower=mincount)
+  e.out = emptyDrops(counts,lower=mincount) # Outputs NAs for cell with lower than 100
   
   
   br = data.frame(br.out@rownames,br.out$rank, br.out$total)

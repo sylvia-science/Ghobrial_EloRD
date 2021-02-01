@@ -398,3 +398,32 @@ readBAM <- function(bamFile){
   return(bam_df)
 }
 
+
+addOldLabels <- function(path,data_input, varName){
+  #browser()
+  
+  cell_names_main = as.character(data_input$sample_cell)
+  old_labels = read.csv(path)
+  # Get only old labels that are in new run
+  old_labels = old_labels[old_labels$sample_cell %in% data_input$sample_cell,]
+  # Match the old barcodes with the main barcodes
+  
+  cell_type_old = as.character(old_labels$cell_type)
+  cell_names_old = old_labels$sample_cell
+  # Get cell names that are in both new data and old data
+  cell_names_main_intersect = cell_names_main[cell_names_main %in% cell_names_old ]
+  cell_names_subset_match = match(cell_names_main_intersect, cell_names_old ) # Reordering 2nd var
+  
+  all(cell_names_main_intersect == cell_names_old[cell_names_subset_match])
+  
+  # Take the cell types that are in both the old and new data, and add them to the new data
+  celltypes = as.character(Idents(data_input))
+  data_input@meta.data[[varName]] = ''
+  data_input@meta.data[[varName]][cell_names_main %in% 
+                                cell_names_old ] = as.character(cell_type_old[cell_names_subset_match])
+  
+  data_input@meta.data[[varName]] = as.factor(data_input@meta.data[[varName]])
+  return(data_input)
+
+}
+

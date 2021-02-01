@@ -89,6 +89,7 @@ for (i in 1:nrow(metaData) ){
   print(FeaturePlot(data_i_run,pt.size =pt.size, reduction = "umap", features = 'nFeature_RNA'))
   dev.off()
   
+  next
   folder_feature = paste0(folder,'Featureplots/Pre_Doublet/' )
   dir.create(folder_feature,recursive = T)
   gene_list = c('CD3D', 'CD3G', 'CD3E', 'CD8A', 'CD8B', 'IL7R', 'SELL', 'CD14', 'FCGR3A', 'NKG7', 'MS4A1', 'IGKC', 'IGHM', 'CD19', 'MZB1', 'CD34', 'CDK6',

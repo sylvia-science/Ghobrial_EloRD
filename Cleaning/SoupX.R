@@ -8,12 +8,21 @@ library(SoupX)
 source('/home/sujwary/Desktop/scRNA/Code/Plot_func.R')
 source('/home/sujwary/Desktop/scRNA/Code/Functions.R')
 
+data_folder = "/home/sujwary/Desktop/scRNA/Data/"
+data_folder = '/disk2/Projects/EloRD_Nivo_PBMC/Data/'
+output_folder = '/disk2/Projects/EloRD/Output/Soup_MT_C100/'
 
 filename_metaData = '/home/sujwary/Desktop/scRNA/Data/EloRD Meta.xlsx'
+
+#filename_metaData = '/disk2/Projects/ElorRD_Nivo_PBMC/MetaData/metaData_EloRD_Nivo_PBMC.xlsx'
 metaData = read_excel(filename_metaData)
-#metaData = metaData[metaData$Run== 1,]
-metaData = metaData[metaData$`Sample Type` == 'PBMC',]
-metaData = metaData[rowSums(is.na(metaData)) != ncol(metaData), ]
+metaData = metaData[metaData$Run== 1,]
+#metaData = metaData[metaData$`Sample Type` == 'PBMC',]
+#metaData = metaData[rowSums(is.na(metaData)) != ncol(metaData), ]
+#metaData = metaData[metaData$Study == 'Nivo',]
+metaData = metaData[metaData$`10X kit` == 'Microwell-seq',]
+
+
 
 filename_sampleParam <- paste0('/home/sujwary/Desktop/scRNA/Data/sample','_parameters.xlsx')
 sampleParam <- read_excel(filename_sampleParam)
@@ -27,78 +36,195 @@ i = 39
 sample_list = c('GL1497BM', 'GL1160BM', 'GL2923BM', 'GL3404BM', 'NBM6CD138N', 'NBM12CD138N', 'GL2185BM', 'GL3417BM', 'GL2653BM')
 
 #sample_list = c('GL3404BM')
-i = 1
+i = 3
 run = T
-for (i in 3:nrow(sampleParam)){
-  sample_name =  sampleParam$Sample[i]
+for (i in 3:nrow(metaData)){
+  sample_name =  metaData$Sample[i]
   #sample_name = metaData$Sample[i]
   #sample_name = sample_list[i]
   #sample_name = 'GL1160BM'
   print(sample_name)
-  percent_mt = sampleParam$percent_mt_min[sampleParam['Sample'] == sample_name]
+  #percent_mt = sampleParam$percent_mt_min[sampleParam['Sample'] == sample_name]
   
   #RNA_features_min = sampleParam$RNA_features_min[sampleParam['Sample'] == sample_name]
   #RNA_features_max = sampleParam$RNA_features_max[sampleParam['Sample'] == sample_name]
   
   #filename = paste("/home/sujwary/Desktop/scRNA/Data/",sample_name,"_raw_feature_bc_matrix.h5",sep = "")
-  filename = paste("/home/sujwary/Desktop/scRNA/Data/",sample_name,"_raw_feature_bc_matrix.h5",sep = "")
-  data_i_raw = Read10X_h5(filename, use.names = TRUE, unique.features = TRUE)
-  data_i_raw = CreateSeuratObject(counts = data_i_raw, project = "BM", min.cells = 3, min.features = 1)
-  
+
+  HCL_list = c('Adult-Bone-Marrow1','Adult-Bone-Marrow2',
+               'Adult-Peripheral-Blood1','Adult-Peripheral-Blood2','Adult-Peripheral-Blood3','Adult-Peripheral-Blood4')
+  if (sample_name %in% HCL_list){
+    filename = paste("/home/sujwary/Desktop/scRNA/Data/",sample_name,"_dge.txt",sep = "")
+    
+    set  = ' '
+    data_i_raw = read.table(file = filename,row.names = 1,header = T, sep = '')
+    if (ncol(data_i_raw) == 1){
+      data_i_raw = read.table(file = filename,row.names = 1,header = T, sep = ',')
+    }
+    nrow(data_i_raw)
+    ncol(data_i_raw)
+    data_i_raw = CreateSeuratObject(data_i_raw,  project = "BM",min.cells = 3, min.features = 1)
+    
+  }else{
+    filename = paste(data_folder,sample_name,"_raw_feature_bc_matrix.h5",sep = "")
+    exists(filename)
+    data_i_raw = Read10X_h5(filename, use.names = TRUE, unique.features = TRUE)
+    data_i_raw = CreateSeuratObject(counts = data_i_raw, project = "BM", min.cells = 3, min.features = 1)
+  }
   colSum_list = colSums(data_i_raw ) # Needs to be from Matrix library
+  mincount = 100
   keep = colSum_list >= 100
+  print(sum(keep))
+  print(sum(!keep))
+  if (sum(!keep) < 3){
+    mincount = 200
+    
+  }
+  data_i_raw[["percent.mt"]] <- PercentageFeatureSet(data_i_raw, pattern = "^MT-")
+  max(data_i_raw$percent.mt)
+  folder = paste0(output_folder,sample_name,'/')
+  pathName <- paste0(folder, '/QC_PreFilter.png')
+  png(file=pathName,width=500, height=500)
+  plot = VlnPlot(data_i_raw, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"),
+                 ncol = 3,pt.size = 0)
+  print(plot)
+  dev.off()
+  
+  countSum_min = min(colSum_list)
+  #next
+  keep = colSum_list >=mincount
   data_i_filtered = data_i_raw[,keep]
   
   data_i_filtered[["percent.mt"]] <- PercentageFeatureSet(data_i_filtered, pattern = "^MT-")
   
   percent_MT_list = data_i_filtered$percent.mt
+  if (countSum_min <= 200){
   
+    ### Scran norm?
+    data_i_filtered_run = NormalizeData(data_i_filtered, normalization.method = "LogNormalize", scale.factor = 10000)
+    #data_i_filtered_run = ScranNorm(data_i_filtered)
+    data_i_filtered_run = FindVariableFeatures(data_i_filtered_run, selection.method = "vst", nfeatures = 2000)
+    data_i_filtered_run = ScaleData(data_i_filtered_run)
+    data_i_filtered_run = RunPCA(data_i_filtered_run,npcs = 30)
+    data_i_filtered_run = FindNeighbors(data_i_filtered_run, dims = 1:30)
+    data_i_filtered_run = FindClusters(data_i_filtered_run)
+    data_i_filtered_run = RunUMAP(data_i_filtered_run, dims = 1:30)
+    
+    data_matrix_filtered = data_i_filtered_run@assays[["RNA"]]@counts
+    data_matrix_raw = data_i_raw@assays[["RNA"]]@counts
+    cluster_IDs = factor(as.character(Idents(data_i_filtered_run)))
+    
   
-  #folder = paste0('/home/sujwary/Desktop/scRNA/Output/tmp/Hist','/')
-  #path = paste0(folder,sample_name,'_hist_MT.png')
-  #png(file=path,width=1000, height=1000)
-  #hist(percent_MT_list)
-  #print( plot)
-  #dev.off()
+      sc = SoupChannel(data_matrix_raw, data_matrix_filtered)
+      sc = setClusters(sc, cluster_IDs)
+      sc = setDR(sc, data_i_filtered_run@reductions[["umap"]]@cell.embeddings)
+      
+      igGenes = c("IGHA1", "IGHA2", "IGHG1", "IGHG2", "IGHG3", "IGHG4", "IGHD", "IGHE", 
+                  "IGHM", "IGLC1", "IGLC2", "IGLC3", "IGLC4", "IGLC5", "IGLC6", "IGLC7", "IGKC")
+      igGenes = igGenes[igGenes %in% sc[["toc"]]@Dimnames[[1]]] # usetoEst will break if not all genes are present
+      HBGenes = c('HBB','HBA2')
+      HBGenes = HBGenes[HBGenes %in% sc[["toc"]]@Dimnames[[1]]] 
+      res <- try({
+        useToEst = estimateNonExpressingCells(sc, nonExpressedGeneList = list(IG = igGenes))
+        folder = paste0(output_folder,sample_name,'/')
+        dir.create(folder, recursive = T)
+        pathName = paste0(folder,sample_name,'_PreSoup_igGenes','','.png')
+        png(file=pathName,width=1000, height=1000)
+        print( plotMarkerMap(sc,geneSet=igGenes,useToEst=useToEst))
+        dev.off()}
+        )
+      
+    
+      
+      useToEst = estimateNonExpressingCells(sc, nonExpressedGeneList = list(IG = HBGenes))
+      folder = paste0(output_folder,sample_name,'/')
+      dir.create(folder, recursive = T)
+      pathName = paste0(folder,sample_name,'_PreSoup_HBGenes','','.png')
+      png(file=pathName,width=1000, height=1000)
+      print( plotMarkerMap(sc,geneSet=igGenes,useToEst=useToEst))
+      dev.off()
+      
+      
+      
+      folder = paste0(output_folder,sample_name,'/')
+      dir.create(folder, recursive = T)
+      
+      print('Plot')
+      folder = paste0(output_folder,sample_name,'/')
+      dir.create(folder, recursive = T)
+      pathName = paste0(folder,sample_name,'_PreSoup_Umap','','.png')
+      png(file=pathName,width=1000, height=1000)
+      print(  DimPlot(data_i_filtered_run,pt.size = 0.5, reduction = "umap",label = FALSE))
+      dev.off()
+    
+    pathName = paste0(folder,sample_name,'_PreSoup_Umap','_percent.mt','.png')
+    png(file=pathName,width=1000, height=1000)
+    print(FeaturePlot(data_i_filtered_run,pt.size = 0.5, reduction = "umap", features = 'percent.mt'))
+    dev.off()
+    
+    pathName = paste0(folder,sample_name,'_PreSoup_Umap','_nFeature_RNA','.png')
+    png(file=pathName,width=1000, height=1000)
+    print(FeaturePlot(data_i_filtered_run,pt.size = 0.5, reduction = "umap", features = 'nFeature_RNA'))
+    dev.off()
+    
+    
+    useToEst = estimateNonExpressingCells(sc, nonExpressedGeneList = list(IG = igGenes, HB = HBGenes))
+    
+    
+    sc = calculateContaminationFraction(sc, list(IG = igGenes, HB = HBGenes), useToEst = useToEst)
+    
+    out = adjustCounts(sc)
+    print('Plot')
+    # Put soup data back into filtered run
+    data_i_filtered_soup = data_i_filtered
+    
+    data_i_filtered_soup@assays[["RNA"]]@counts = out
+    
+  }else{
+    data_i_filtered_run = NormalizeData(data_i_filtered, normalization.method = "LogNormalize", scale.factor = 10000)
+    #data_i_filtered_run = ScranNorm(data_i_filtered)
+    data_i_filtered_run = FindVariableFeatures(data_i_filtered_run, selection.method = "vst", nfeatures = 2000)
+    data_i_filtered_run = ScaleData(data_i_filtered_run)
+    data_i_filtered_run = RunPCA(data_i_filtered_run,npcs = 30)
+    data_i_filtered_run = FindNeighbors(data_i_filtered_run, dims = 1:30)
+    data_i_filtered_run = FindClusters(data_i_filtered_run)
+    data_i_filtered_run = RunUMAP(data_i_filtered_run, dims = 1:30)
+    
+    folder = paste0(output_folder,sample_name,'/')
+    dir.create(folder, recursive = T)
+    
+    print('Plot')
+    folder = paste0(output_folder,sample_name,'/')
+    dir.create(folder, recursive = T)
+    pathName = paste0(folder,sample_name,'_PreSoup_Umap','','.png')
+    png(file=pathName,width=1000, height=1000)
+    print(  DimPlot(data_i_filtered_run,pt.size = 0.5, reduction = "umap",label = FALSE))
+    dev.off()
+    
+    pathName = paste0(folder,sample_name,'_PreSoup_Umap','_percent.mt','.png')
+    png(file=pathName,width=1000, height=1000)
+    print(FeaturePlot(data_i_filtered_run,pt.size = 0.5, reduction = "umap", features = 'percent.mt'))
+    dev.off()
+    
+    pathName = paste0(folder,sample_name,'_PreSoup_Umap','_nFeature_RNA','.png')
+    png(file=pathName,width=1000, height=1000)
+    print(FeaturePlot(data_i_filtered_run,pt.size = 0.5, reduction = "umap", features = 'nFeature_RNA'))
+    dev.off()
+    
+    
+    
+    # Put soup data back into filtered run
+    data_i_filtered_soup = data_i_filtered
+    
+  }
+################3
+ 
+  pathName <- paste0(folder,sample_name, 'QC_PostFilter.png')
+  png(file=pathName,width=500, height=500)
+  plot = VlnPlot(data_i_filtered_run, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"),
+                 ncol = 3,pt.size = 0)
+  print(plot)
   
-  ### Scran norm?
-  data_i_filtered_run = NormalizeData(data_i_filtered, normalization.method = "LogNormalize", scale.factor = 10000)
-  #data_i_filtered_run = ScranNorm(data_i_filtered)
-  data_i_filtered_run = FindVariableFeatures(data_i_filtered_run, selection.method = "vst", nfeatures = 2000)
-  data_i_filtered_run = ScaleData(data_i_filtered_run)
-  data_i_filtered_run = RunPCA(data_i_filtered_run,npcs = 30)
-  data_i_filtered_run = FindNeighbors(data_i_filtered_run, dims = 1:30)
-  data_i_filtered_run = FindClusters(data_i_filtered_run)
-  data_i_filtered_run = RunUMAP(data_i_filtered_run, dims = 1:30)
-  
-  data_matrix_filtered = data_i_filtered_run@assays[["RNA"]]@counts
-  data_matrix_raw = data_i_raw@assays[["RNA"]]@counts
-  cluster_IDs = factor(as.character(Idents(data_i_filtered_run)))
-  
-  
-  sc = SoupChannel(data_matrix_raw, data_matrix_filtered)
-  sc = setClusters(sc, cluster_IDs)
-  sc = setDR(sc, data_i_filtered_run@reductions[["umap"]]@cell.embeddings)
-  
-  igGenes = c("IGHA1", "IGHA2", "IGHG1", "IGHG2", "IGHG3", "IGHG4", "IGHD", "IGHE", 
-              "IGHM", "IGLC1", "IGLC2", "IGLC3", "IGLC4", "IGLC5", "IGLC6", "IGLC7", "IGKC")
-  igGenes = igGenes[igGenes %in% sc[["toc"]]@Dimnames[[1]]] # usetoEst will break if not all genes are present
-  HBGenes = c('HBB','HBA2')
-  HBGenes = HBGenes[HBGenes %in% sc[["toc"]]@Dimnames[[1]]] 
-  
-  useToEst = estimateNonExpressingCells(sc, nonExpressedGeneList = list(IG = igGenes, HB = HBGenes))
-  
-  
-  sc = calculateContaminationFraction(sc, list(IG = igGenes, HB = HBGenes), useToEst = useToEst)
-  
-  out = adjustCounts(sc)
-  print('Plot')
-  
-  
-  # Put soup data back into filtered run
-  data_i_filtered_soup = data_i_filtered
-  
-  data_i_filtered_soup@assays[["RNA"]]@counts = out
   
   data_i_filtered_soup = data_i_filtered_soup[, data_i_filtered_soup$percent.mt < 15]
   
@@ -113,25 +239,87 @@ for (i in 3:nrow(sampleParam)){
   
   
   
-  folder = paste0('/disk2/Projects/EloRD/Output/Soup_MT_C100/',sample_name,'/')
+  folder = paste0(output_folder,sample_name,'/')
+  dir.create(folder,recursive = T)
+  path = paste0(folder,'/',sample_name,'.Robj')
+  save(data_i_filtered_soup_run,file= path)
+
+  write(colnames(data_i_filtered_soup_run@assays[["RNA"]]@counts ), file = paste0(folder,sample_name,'_colnames.txt'))
+  write(rownames(data_i_filtered_soup_run@assays[["RNA"]]@counts ), file = paste0(folder,sample_name,'_rownames.txt'))
+  writeMM(data_i_filtered_soup_run@assays[["RNA"]]@counts , file = paste0(folder,sample_name,'_matrix.txt'))
+  
+  
+  folder = paste0(output_folder,sample_name,'/')
   dir.create(folder,recursive = T)
   path = paste0(folder,'/',sample_name,'.Robj')
   save(data_i_filtered_soup_run,file= path)
   
-  write(colnames(data_i_filtered_soup@assays[["RNA"]]@counts ), file = paste0(folder,sample_name,'_colnames.txt'))
-  write(rownames(data_i_filtered_soup@assays[["RNA"]]@counts ), file = paste0(folder,sample_name,'_rownames.txt'))
-  writeMM(data_i_filtered_soup@assays[["RNA"]]@counts , file = paste0(folder,sample_name,'_matrix.txt'))
+  folder = paste0(output_folder,sample_name,'/')
+  dir.create(folder)
+  path = paste0(folder,'/',sample_name,'_Soup_adjusted.Robj')
+  save(data_i_filtered_soup_run,file= path)
+  
+  print('Plot')
+  folder = paste0(output_folder,sample_name,'/')
+  dir.create(folder, recursive = T)
+  pathName = paste0(folder,sample_name,'_Post_Soup_Umap','','.png')
+  png(file=pathName,width=1000, height=1000)
+  print(  DimPlot(data_i_filtered_soup_run,pt.size = 0.5, reduction = "umap",label = FALSE))
+  dev.off()
+  
+  pathName = paste0(folder,sample_name,'_Post_Soup_Umap','_percent.mt','.png')
+  png(file=pathName,width=1000, height=1000)
+  print(FeaturePlot(data_i_filtered_soup_run,pt.size = 0.5, reduction = "umap", features = 'percent.mt'))
+  dev.off()
+  
+  pathName = paste0(folder,sample_name,'_Post_Soup_Umap','_nFeature_RNA','.png')
+  png(file=pathName,width=1000, height=1000)
+  print(FeaturePlot(data_i_filtered_soup_run,pt.size = 0.5, reduction = "umap", features = 'nFeature_RNA'))
+  dev.off()
+  print(pathName)
+  # 
+  
+  
+  
+  gene_list = c('CD3D', 'CD3G', 'CD3E', 'CD8A', 'CD8B', 'IL7R', 'SELL', 'CD14', 'FCGR3A', 'NKG7', 'MS4A1', 'IGKC', 'IGHM', 'CD19', 'MZB1', 'CD34', 'CDK6',
+                'FCER1A','FUT4', 'ELANE', 'MPO', 'HBA2', 'HBB', 'LYZ', 'TNFRSF17')
+  
+  for (j in 1:length(gene_list)){
+    gene = gene_list[j]
+    print(gene)
+    #browser()
+    folder = paste0(output_folder,sample_name,'/','Featureplots/')
+    dir.create(folder,recursive = T)
+    
+    plot = FeaturePlotFix(data_i_filtered_soup_run, feature = gene, folder =folder,
+                          str = '',split = F, markerSize = 3,gene_TF = TRUE,title = '',saveTF = FALSE)
+    plot = plot + theme(
+      axis.title.x = element_text(color="black", size=24 ),
+      axis.title.y = element_text(color="black", size=24),
+      axis.text= element_text(color="black", size=24),
+      legend.text=element_text(size=24),
+      legend.title=element_text(size=24),
+      text = element_text(size = 20)
+    )
+    
+    file_str = ''
+    pathName = paste0(folder,gene,file_str,'.png')
+    pathName = paste0(folder,gene,'','.png')
+    png(filename = pathName,width=2000, height=2000)
+    print(plot)
+    dev.off()
+    remove(plot)
+    
+  }
   
   next
-  data_i_filtered_soup = data_i_filtered_soup[, data_i_filtered_soup$percent.mt < percent_mt]
-  data_i_filtered_soup = data_i_filtered_soup[, data_i_filtered_soup$nFeature_RNA > RNA_features_min]
-  data_i_filtered_soup = data_i_filtered_soup[, data_i_filtered_soup$nFeature_RNA < RNA_features_max]
+  print('here')
+  #data_i_filtered_soup = data_i_filtered_soup[, data_i_filtered_soup$percent.mt < percent_mt]
+  #data_i_filtered_soup = data_i_filtered_soup[, data_i_filtered_soup$nFeature_RNA > RNA_features_min]
+  #data_i_filtered_soup = data_i_filtered_soup[, data_i_filtered_soup$nFeature_RNA < RNA_features_max]
   
+ 
   
-  folder = paste0('/home/sujwary/Desktop/scRNA/Output/Soup_MT_nFeature/',sample_name,'/')
-  dir.create(folder,recursive = T)
-  path = paste0(folder,'/',sample_name,'.Robj')
-  save(data_i_filtered_run_soup,file= path)
 }
 
 
@@ -217,7 +405,7 @@ for (i in 1:nrow(metaData) ){
   HBGenes = c('HBB','HBA2')
   HBGenes = HBGenes[HBGenes %in% sc[["toc"]]@Dimnames[[1]]] 
   
-  useToEst = estimateNonExpressingCells(sc, nonExpressedGeneList = list(IG = igGenes))
+  useToEst = estimateNonExpressingCells(sc, nonExpressedGeneList = list(IG = igGenes, HB = HBGenes))
   folder = paste0('/home/sujwary/Desktop/scRNA/Output/Soup/',sample_name,'/')
   dir.create(folder, recursive = T)
   pathName = paste0(folder,sample_name,'_PreSoup_igGenes','','.png')
@@ -257,7 +445,7 @@ for (i in 1:nrow(metaData) ){
   print(FeaturePlot(data_i_filtered_run,pt.size = 0.5, reduction = "umap", features = 'nFeature_RNA'))
   dev.off()
   
-  next
+  
   
   useToEst = estimateNonExpressingCells(sc, nonExpressedGeneList = list(IG = igGenes, HB = HBGenes))
   
@@ -275,7 +463,7 @@ for (i in 1:nrow(metaData) ){
   
   
   print(pathName)
-  
+  ##############################
   # Put soup data back into filtered run
   data_i_filtered_run_soup = data_i_filtered_run
   

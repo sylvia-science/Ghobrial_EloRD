@@ -29,8 +29,8 @@ folder = 'Soup_MT_scran_Doublet'
 
 #pbmc.data <- Read10X(data.dir = '/home/sujwary/Downloads/pbmc3k_filtered_gene_bc_matrices/filtered_gene_bc_matrices/hg19/')
 #pbmc <- CreateSeuratObject(counts = pbmc.data, project = "pbmc3k", min.cells = 3, min.features = 200)
-i = 4
-for (i in 1:nrow(metaData) ){
+i = 9
+for (i in 15:nrow(metaData) ){
   
   sample_name = metaData$Sample[i]
   print(sample_name)
@@ -95,6 +95,8 @@ for (i in 1:nrow(metaData) ){
   print(FeaturePlot(data_i_run,pt.size =pt.size, reduction = "umap", features = 'nFeature_RNA'))
   dev.off()
   
+  next
+  
   gene_list = c('CD3D', 'CD3G', 'CD3E', 'CD8A', 'CD8B', 'IL7R', 'SELL', 'CD14', 'FCGR3A', 'NKG7', 'MS4A1', 'IGKC', 'IGHM', 'CD19', 'MZB1', 'CD34', 'CDK6',
                 'FCER1A','FUT4', 'ELANE', 'MPO', 'HBA2', 'HBB', 'LYZ', 'TNFRSF17')
   
@@ -127,7 +129,7 @@ for (i in 1:nrow(metaData) ){
   
   
   
-  next
+
   # Remove doubelts
   data_i_filtered_run = data_i_run
   data_i_filtered_run = data_i_filtered_run[,data_i_filtered_run@meta.data[var] == 'Singlet']

@@ -258,6 +258,10 @@ diffExpPermute = function(data,cell_features){
     ident1 = level_list[perm[i,1] + 1]
     ident2 = level_list[perm[i,2] + 1]
     
+    if (sum( Idents(data) == ident1  )< 5 | sum( Idents(data) == ident2 )< 5){
+      next
+    }
+    
     print(perm[i,])
     Features_mvn = FindMarkers(data, ident.1 = ident1, ident.2 = ident2
                                ,min.pct = 0.1, logfc.threshold = 0.01, only.pos = TRUE)

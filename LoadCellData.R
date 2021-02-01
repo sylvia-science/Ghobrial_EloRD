@@ -68,6 +68,11 @@ load_Doublets <- function(data) {
     #browser()
     #threshold=  sampleParam$Scrublet_threshold[sampleParam['Sample'] == sample_name]
     path = paste0('/home/sujwary/Desktop/scRNA/Output/Doublet4Methods/',sample_name,'/doublet_summary','.csv')
+    #browser()
+    if (!file.exists(path)){
+      print('No Doublet file found')
+      next
+    }
     doublet = read.csv(path,header = T)
     #browser()
 
