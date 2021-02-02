@@ -4,6 +4,7 @@ library(SeuratWrappers)
 # If you don't have velocyto's example mouse bone marrow dataset, download with the CURL command
 # curl::curl_download(url = 'http://pklab.med.harvard.edu/velocyto/mouseBM/SCG71.loom', destfile
 # = '~/Downloads/SCG71.loom')
+#
 ldat <- ReadVelocity(file = "~/Downloads/SCG71.loom")
 bm <- as.Seurat(x = ldat)
 bm <- SCTransform(object = bm, assay = "spliced")
