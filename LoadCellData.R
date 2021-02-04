@@ -6,7 +6,7 @@ library(DropletUtils)
 library(ggplot2)
 library(SoupX)
 
-load_emptyDrops <- function(data) {
+load_emptyDrops <- function(data,base) {
   data$emptyProb = NA
   data$is_cell = NA
   sample_list = unique(data$sample)
@@ -21,7 +21,7 @@ load_emptyDrops <- function(data) {
     
 
     
-    folder = paste0('/home/sujwary/Desktop/scRNA/Output/EmptyCells/',sample_name,'/')
+    folder = paste0(base,sample_name,'/')
     file_name = paste0(folder,'emptyDrops','.csv')
     if(!file.exists(file_name)){
       print(file_name)
@@ -41,6 +41,12 @@ load_emptyDrops <- function(data) {
     
     if (any(is.na(br_e_sorted$is.cell))){
       browser()
+    }
+    if (nrow(br_e_sorted) == 0){
+      print('All NA values for empty cells')
+      data$emptyProb[data$sample == sample_name] = 0
+      data$is_cell[data$sample == sample_name] = T
+      next
     }
     data$emptyProb[data$sample == sample_name] = br_e_sorted$LogProb
     data$is_cell[data$sample == sample_name] = br_e_sorted$is_cell
@@ -146,7 +152,7 @@ addMetaData = function(data, metaData){
         #browser()
       }
       #browser()
-      metaData_sample_val = metaData[,colname][metaData$Sample == sample,]
+      metaData_sample_val = metaData[,colname][metaData$Sample == sample]
       metaData_sample_val = metaData_sample_val[[1]]
       if(length(metaData_sample_val) == 0){
         next

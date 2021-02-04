@@ -7,20 +7,23 @@ library(ggplot2)
 library(SoupX)
 source('/home/sujwary/Desktop/scRNA/Code/Plot_func.R')
 source('/home/sujwary/Desktop/scRNA/Code/Functions.R')
+output_folder = '/disk2/Projects/EloRD_Nivo_Oksana/Output/Soup_MT_C100/'
 
 data_folder = "/home/sujwary/Desktop/scRNA/Data/"
-data_folder = '/disk2/Projects/EloRD_Nivo_PBMC/Data/'
-output_folder = '/disk2/Projects/EloRD/Output/Soup_MT_C100/'
-
 filename_metaData = '/home/sujwary/Desktop/scRNA/Data/EloRD Meta.xlsx'
 
-#filename_metaData = '/disk2/Projects/ElorRD_Nivo_PBMC/MetaData/metaData_EloRD_Nivo_PBMC.xlsx'
+data_folder = '/disk2/Projects/EloRD_Nivo_PBMC/Data/'
+filename_metaData = '/disk2/Projects/EloRD_Nivo_PBMC/MetaData/metaData_EloRD_Nivo_PBMC.xlsx'
+
+data_folder = '/disk2/Projects/EloRD_Nivo_Oksana/Data/'
+filename_metaData = '/disk2/Projects/EloRD_Nivo_Oksana/MetaData/10X Sequenced Samples.xlsx'
+
 metaData = read_excel(filename_metaData)
 metaData = metaData[metaData$Run== 1,]
 #metaData = metaData[metaData$`Sample Type` == 'PBMC',]
 #metaData = metaData[rowSums(is.na(metaData)) != ncol(metaData), ]
 #metaData = metaData[metaData$Study == 'Nivo',]
-metaData = metaData[metaData$`10X kit` == 'Microwell-seq',]
+#metaData = metaData[metaData$`10X kit` == 'Microwell-seq',]
 
 
 
@@ -36,9 +39,18 @@ i = 39
 sample_list = c('GL1497BM', 'GL1160BM', 'GL2923BM', 'GL3404BM', 'NBM6CD138N', 'NBM12CD138N', 'GL2185BM', 'GL3417BM', 'GL2653BM')
 
 #sample_list = c('GL3404BM')
-i = 3
+i = 55
 run = T
-for (i in 3:nrow(metaData)){
+for (i in 59:nrow(metaData)){
+  
+  folder = paste0(output_folder,sample_name,'/')
+  dir.create(folder,recursive = T)
+  path = paste0(folder,'/',sample_name,'.Robj')
+  if (file.exists(path)){
+    print('File Exists')
+    #next
+  }
+  
   sample_name =  metaData$Sample[i]
   #sample_name = metaData$Sample[i]
   #sample_name = sample_list[i]
@@ -51,6 +63,7 @@ for (i in 3:nrow(metaData)){
   
   #filename = paste("/home/sujwary/Desktop/scRNA/Data/",sample_name,"_raw_feature_bc_matrix.h5",sep = "")
 
+  file_list = list.files(path = data_folder)
   HCL_list = c('Adult-Bone-Marrow1','Adult-Bone-Marrow2',
                'Adult-Peripheral-Blood1','Adult-Peripheral-Blood2','Adult-Peripheral-Blood3','Adult-Peripheral-Blood4')
   if (sample_name %in% HCL_list){
@@ -66,9 +79,11 @@ for (i in 3:nrow(metaData)){
     data_i_raw = CreateSeuratObject(data_i_raw,  project = "BM",min.cells = 3, min.features = 1)
     
   }else{
-    filename = paste(data_folder,sample_name,"_raw_feature_bc_matrix.h5",sep = "")
-    exists(filename)
-    data_i_raw = Read10X_h5(filename, use.names = TRUE, unique.features = TRUE)
+    filename = file_list[startsWith(file_list,paste0(sample_name,'_raw') )]
+    path = paste0(data_folder,filename)
+    
+    file.exists(path)
+    data_i_raw = Read10X_h5(path, use.names = TRUE, unique.features = TRUE)
     data_i_raw = CreateSeuratObject(counts = data_i_raw, project = "BM", min.cells = 3, min.features = 1)
   }
   colSum_list = colSums(data_i_raw ) # Needs to be from Matrix library
@@ -80,9 +95,16 @@ for (i in 3:nrow(metaData)){
     mincount = 200
     
   }
+  
+
+  data_i_raw = data_i_raw[!is.na(rownames(data_i_raw)),]
+  
   data_i_raw[["percent.mt"]] <- PercentageFeatureSet(data_i_raw, pattern = "^MT-")
+  data_i_raw = data_i_raw[,!is.na(data_i_raw$percent.mt)]
   max(data_i_raw$percent.mt)
   folder = paste0(output_folder,sample_name,'/')
+  dir.create(folder,recursive = T)
+  
   pathName <- paste0(folder, '/QC_PreFilter.png')
   png(file=pathName,width=500, height=500)
   plot = VlnPlot(data_i_raw, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"),
@@ -92,10 +114,12 @@ for (i in 3:nrow(metaData)){
   
   countSum_min = min(colSum_list)
   #next
+  colSum_list = colSums(data_i_raw )
   keep = colSum_list >=mincount
   data_i_filtered = data_i_raw[,keep]
   
-  data_i_filtered[["percent.mt"]] <- PercentageFeatureSet(data_i_filtered, pattern = "^MT-")
+  #data_i_filtered[["percent.mt"]] <- PercentageFeatureSet(data_i_filtered, pattern = "^MT-")
+  
   
   percent_MT_list = data_i_filtered$percent.mt
   if (countSum_min <= 200){
@@ -115,14 +139,14 @@ for (i in 3:nrow(metaData)){
     cluster_IDs = factor(as.character(Idents(data_i_filtered_run)))
     
   
-      sc = SoupChannel(data_matrix_raw, data_matrix_filtered)
-      sc = setClusters(sc, cluster_IDs)
-      sc = setDR(sc, data_i_filtered_run@reductions[["umap"]]@cell.embeddings)
+    sc = SoupChannel(data_matrix_raw, data_matrix_filtered)
+    sc = setClusters(sc, cluster_IDs)
+    sc = setDR(sc, data_i_filtered_run@reductions[["umap"]]@cell.embeddings)
       
-      igGenes = c("IGHA1", "IGHA2", "IGHG1", "IGHG2", "IGHG3", "IGHG4", "IGHD", "IGHE", 
+    igGenes = c("IGHA1", "IGHA2", "IGHG1", "IGHG2", "IGHG3", "IGHG4", "IGHD", "IGHE", 
                   "IGHM", "IGLC1", "IGLC2", "IGLC3", "IGLC4", "IGLC5", "IGLC6", "IGLC7", "IGKC")
-      igGenes = igGenes[igGenes %in% sc[["toc"]]@Dimnames[[1]]] # usetoEst will break if not all genes are present
-      HBGenes = c('HBB','HBA2')
+    igGenes = igGenes[igGenes %in% sc[["toc"]]@Dimnames[[1]]] # usetoEst will break if not all genes are present
+    HBGenes = c('HBB','HBA2')
       HBGenes = HBGenes[HBGenes %in% sc[["toc"]]@Dimnames[[1]]] 
       res <- try({
         useToEst = estimateNonExpressingCells(sc, nonExpressedGeneList = list(IG = igGenes))
@@ -217,14 +241,16 @@ for (i in 3:nrow(metaData)){
     data_i_filtered_soup = data_i_filtered
     
   }
-################3
+###################################
  
-  pathName <- paste0(folder,sample_name, 'QC_PostFilter.png')
+  Idents(data_i_filtered_run) = ''
+  folder = paste0(output_folder,sample_name,'/')
+  pathName <- paste0(folder, 'QC_PostFilter.png')
   png(file=pathName,width=500, height=500)
   plot = VlnPlot(data_i_filtered_run, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"),
-                 ncol = 3,pt.size = 0)
+                 ncol = 3,pt.size = 0,split.by = NULL)
   print(plot)
-  
+  dev.off()
   
   data_i_filtered_soup = data_i_filtered_soup[, data_i_filtered_soup$percent.mt < 15]
   

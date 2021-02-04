@@ -10,21 +10,30 @@ source('/home/sujwary/Desktop/scRNA/Code/Functions.R')
 
 
 filename_metaData = '/home/sujwary/Desktop/scRNA/Data/EloRD Meta.xlsx'
+filename_metaData = '/disk2/Projects/EloRD_Nivo_PBMC/MetaData/metaData_EloRD_Nivo_PBMC.xlsx'
+
+data_folder = '/disk2/Projects/EloRD_Nivo_Oksana/Data/'
+output_folder = '/disk2/Projects/EloRD_Nivo_Oksana/Output/EmptyCells/'
+filename_metaData = '/disk2/Projects/EloRD_Nivo_Oksana/MetaData/10X Sequenced Samples.xlsx'
+
 metaData = read_excel(filename_metaData)
 metaData = metaData[metaData$Run== 1,]
 #metaData = metaData[metaData$`Sample Type` == 'PBMC',]
 #metaData = metaData[rowSums(is.na(metaData)) != ncol(metaData), ]
-metaData = metaData[metaData$`10X kit` == 'Microwell-seq',]
+#metaData = metaData[metaData$`10X kit` == 'Microwell-seq',]
+#metaData = metaData[metaData$Study == 'Nivo',]
 
-filename_sampleParam <- paste0('/home/sujwary/Desktop/scRNA/Data/sample','_parameters.xlsx')
+sample_name = 'NL1065CD45NBM'
+filename_sampleParam <- paste0('/home/sujwary/Desktop/scRNA/Data/sample_parameters.xlsx')
 sampleParam <- read_excel(filename_sampleParam)
-i = 2
-for (i in 3:nrow(metaData) ){
+i = 1
+
+for (i in 59:nrow(metaData) ){
 
   sample_name = metaData$Sample[i]
   print(sample_name)
   
-  file = paste0('/home/sujwary/Desktop/scRNA/Output/EmptyCells/',sample_name,'/', 'emptyDrops','.csv')
+  file = paste0(output_folder,sample_name,'/', 'emptyDrops','.csv')
   if(file.exists( file)){
     print('File already exists')
     next
@@ -46,9 +55,11 @@ for (i in 3:nrow(metaData) ){
     data_i_raw = CreateSeuratObject(data_i_raw,  project = "BM",min.cells = 3, min.features = 1)
     
   }else{
-    filename = paste(data_folder,sample_name,"_raw_feature_bc_matrix.h5",sep = "")
-    exists(filename)
-    data_i_raw = Read10X_h5(filename, use.names = TRUE, unique.features = TRUE)
+    filename = file_list[startsWith(file_list,paste0(sample_name,'_raw') )]
+    path = paste0(data_folder,filename)
+    
+    file.exists(path)
+    data_i_raw = Read10X_h5(path, use.names = TRUE, unique.features = TRUE)
     data_i_raw = CreateSeuratObject(counts = data_i_raw, project = "BM", min.cells = 3, min.features = 1)
   }
   colSum_list = colSums(data_i_raw ) # Needs to be from Matrix library
@@ -57,7 +68,7 @@ for (i in 3:nrow(metaData) ){
   print(sum(keep))
   print(sum(!keep))
   if (sum(!keep) < 3){
-    mincount = 300
+    mincount = 200
     
   }
   countSum_min = min(colSum_list)
@@ -73,14 +84,14 @@ for (i in 3:nrow(metaData) ){
     br_e$LogProb = 0
     br_e$FDR  = 1
     
-    folder = paste0('/home/sujwary/Desktop/scRNA/Output/EmptyCells/',sample_name,'/')
+    folder = paste0(output_folder,sample_name,'/')
     dir.create(folder, recursive =T)
     write.csv(br_e, file = paste0(folder,'emptyDrops','.csv'),row.names = FALSE)
     
+    print('Min countsum is larger than 400')
     next
   }
-  #row_val = rownames(data_i_filtered)
-  #col_val = colnames(data_i_filtered)
+
   
   ## Empty drops
   counts= data_i_raw@assays[["RNA"]]@counts
@@ -102,7 +113,7 @@ for (i in 3:nrow(metaData) ){
   
   br_e_sorted = br_e[match(as.character(rownames(data_i_filtered@meta.data)), as.character(br_e$rownames)   ),]
   
-  folder = paste0('/home/sujwary/Desktop/scRNA/Output/EmptyCells/',sample_name,'/')
+  folder = paste0(output_folder,sample_name,'/')
   dir.create(folder, recursive =T)
   write.csv(br_e, file = paste0(folder,'emptyDrops','.csv'),row.names = FALSE)
   
@@ -160,7 +171,7 @@ for (i in 3:nrow(metaData) ){
     gene = gene_list[j]
     print(gene)
     #browser()
-    folder = paste0('/home/sujwary/Desktop/scRNA/Output/EmptyCells/',sample_name,'/','Featureplots/PreEmpty/')
+    folder = paste0(output_folder,sample_name,'/','Featureplots/PreEmpty/')
     dir.create(folder,recursive = T)
     plot = FeaturePlotFix(data_i_filtered_run, feature = gene, folder =folder,
                           str = '',split = F, markerSize = 3,gene_TF = TRUE,title = '',saveTF = FALSE)
@@ -196,7 +207,7 @@ for (i in 3:nrow(metaData) ){
   data_i_filtered_isCell = RunUMAP(data_i_filtered_isCell, dims = 1:30)
   
   print('Plot')
-  folder = paste0('/home/sujwary/Desktop/scRNA/Output/EmptyCells/',sample_name,'/')
+  folder = paste0(output_folder,sample_name,'/')
   dir.create(folder, recursive = T)
   pathName = paste0(folder,sample_name,'_PostEmpty_Umap','','.png')
   png(file=pathName,width=1000, height=1000)
@@ -230,7 +241,7 @@ for (i in 3:nrow(metaData) ){
     gene = gene_list[j]
     print(gene)
     #browser()
-    folder = paste0('/home/sujwary/Desktop/scRNA/Output/EmptyCells/',sample_name,'/','Featureplots/PostEmpty/')
+    folder = paste0(output_folder,sample_name,'/','Featureplots/PostEmpty/')
     dir.create(folder,recursive = T)
     plot = FeaturePlotFix(data_i_filtered_isCell, feature = gene, folder =folder,
                           str = '',split = F, markerSize = 3,gene_TF = TRUE,title = '',saveTF = FALSE)
@@ -280,7 +291,7 @@ for (i in 1:nrow(metaData) ){
   ## Empty drops
   
 
-  folder = paste0('/home/sujwary/Desktop/scRNA/Output/EmptyCells/',sample_name,'/')
+  folder = paste0(output_folder,sample_name,'/')
   file_name = paste0(folder,'emptyDrops','.csv')
   br_e = read.csv(file_name)
   br_e_sorted = br_e[match(as.character(rownames(data_soup@meta.data)), as.character(br_e$rownames)   ),]

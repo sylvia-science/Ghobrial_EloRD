@@ -39,25 +39,25 @@ source('~/Desktop/scRNA/Code/Analysis/DE_Methods.R')
 celltype = 'T Cell'
 cell_list = c('T-cell','CD8+ T-cell')
 #resolution_val_subset = 3.5
-# # 
-celltype = 'Mono_DC'
-cell_list = c('CD14+ Mono','CD16+ Mono','DC')
-resolution_val_subset = 1.6
+# # # 
+# celltype = 'Mono_DC'
+# cell_list = c('CD14+ Mono','CD16+ Mono','DC')
+# resolution_val_subset = 1.6
 # # # #
-# # celltype = 'NK_Remove_Nfeature2000'
-# # cell_list = c('NK')
-# # resolution_val_subset = 1.2
-# # 
-celltype = 'NK_RemoveRiboFeatures'
-cell_list = c('NK')
-resolution_val_subset = 3
+# # # celltype = 'NK_Remove_Nfeature2000'
+# # # cell_list = c('NK')
+# # # resolution_val_subset = 1.2
+# # # 
+# celltype = 'NK_RemoveRiboFeatures'
+# cell_list = c('NK')
+# resolution_val_subset = 3
 
 
 # 
 # celltype = 'NK'
 # cell_list = c('NK')
 # resolution_val_subset = 3
-# # # 
+# # # # 
 # celltype = 'B_Cell'
 # cell_list = c('B-cell','Pro B-cell','Pre B-cell','Plasma Cell')
 # resolution_val_subset = 3
@@ -98,6 +98,7 @@ sample_type = 'Harmony_AllSamples_Sample_Kit'
 folder_name = 'AllSamples'
 base = '/home/sujwary/Desktop/scRNA/Output/Harmony/'
 harmony_groupby = '_Sample_Kit'
+
 # folder_name = 'AllSamples'
 # #folder_name = 'PBMC'
 # base = '/home/sujwary/Desktop/scRNA/Output/Harmony/'
@@ -106,7 +107,7 @@ harmony_groupby = '_Sample_Kit'
 # folder_name = 'AllSamples_PBMC'
 # harmony_groupby = 'Sample_Kit'
 # base = '/disk2/Projects/EloRD/Output/Harmony/'
-# 
+
 # sample_type = 'AllSamples_PBMC_NPBMC_HCL_Sample_kit_tech'
 # folder_name = 'AllSamples_PBMC_NPBMC_HCL'
 # harmony_groupby = '_Sample_kit_tech'
@@ -360,8 +361,8 @@ if(celltype == 'T Cell'){
   new_Idents[colnames(data_run_subset_label) %in% TSCM_res4$x] = 'TSCM'
   Idents(data_run_subset_label) = new_Idents
   
-  remove_list = c('Remove','Pro Erythrocyte')
-  data_run_subset_label = data_run_subset_label[,!(Idents(data_run_subset_label) %in% remove_list)]
+  #remove_list = c('Remove','Pro Erythrocyte')
+  #data_run_subset_label = data_run_subset_label[,!(Idents(data_run_subset_label) %in% remove_list)]
 
 }
 
@@ -406,7 +407,7 @@ filepath_cluster = paste0( folder_subcluster, 'Cluster/', 'PCA',PCA_dim_subset,'
 plotAll(data_run_subset, folder = folder_subcluster,
         sample_name,sampleParam = NA,
         cell_features = cell_features,
-        label_TF = F,integrate_TF = F,  DE_perm_TF =T, 
+        label_TF = F,integrate_TF = F,  DE_perm_TF =F, 
         clusterTF =F, markersTF = F, 
         groupBy = groupBy_list, splitBy = splitBy_list,featurePlot_list = featurePlot_list,
         PCA_dim = PCA_dim_subset,resolution_val = resolution_val_subset,
@@ -418,8 +419,8 @@ plotAll(data_run_subset, folder = folder_subcluster,
 plotAll(data_run_subset_label, folder = folder_subcluster,
         sample_name,sampleParam = NA,
         cell_features = cell_features,
-        label_TF = F,integrate_TF = F,  DE_perm_TF = T, 
-        clusterTF = F, markersTF = T,  
+        label_TF = F,integrate_TF = F,  DE_perm_TF = F, 
+        clusterTF = F, markersTF = F,  
         groupBy = groupBy_list, splitBy = splitBy_list,
         PCA_dim = PCA_dim_subset,resolution_val = resolution_val_subset, 
         pt.size = 2,
@@ -428,7 +429,7 @@ plotAll(data_run_subset_label, folder = folder_subcluster,
 plotAll(data_run_subset_label_remove, folder = folder_subcluster,
         sample_name,sampleParam = NA,
         cell_features = cell_features,
-        label_TF = F,integrate_TF = F,  DE_perm_TF = T, 
+        label_TF = F,integrate_TF = F,  DE_perm_TF = F, 
         clusterTF = F, markersTF = T  ,
         groupBy = groupBy_list, splitBy = splitBy_list,
         PCA_dim = PCA_dim_subset,resolution_val = resolution_val_subset, 
@@ -644,8 +645,8 @@ data_input = data_run_subset
 cluster_list1 = sort(unique(Idents(data_input)))
 cluster_list2 = cluster_list1
 
-cluster_list1 = c('0','2','15')
-cluster_list2 = c('12','13')
+cluster_list1 = c('Th17')
+cluster_list2 = c(1)
 
 cluster1 = 11
 cluster2 = 5
@@ -882,7 +883,7 @@ write.table(data_matrix_var,
 
 sample = as.character(data_run_subset$sample)
 ident = as.character(Idents(data_run_subset))
-UmapCoord = data_run_subset@reductions[["umap"]]@cell.embeddings
+UmapCoord = as.data.frame(data_run_subset@reductions[["umap"]]@cell.embeddings)
 cell =  colnames(data_run_subset)
 label = as.character(Idents(data_run_subset_label))
 old_ident = as.character(data_run_subset$OldCellType)
@@ -891,6 +892,7 @@ old_ident_NK = as.character(data_run_subset$OldNKLabels)
 old_ident_Mono = as.character(data_run_subset$OldMonoLabels)
 
 
+output = cbind(cell,sample,ident,label,UmapCoord)
 output = cbind(cell,sample,ident,label,UmapCoord,old_ident, old_ident_T,old_ident_NK,old_ident_Mono)
 #output = output[,c('sample')]
 #output = data_run_subset_label@meta.data

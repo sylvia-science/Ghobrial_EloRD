@@ -4,7 +4,6 @@
 
 # run PCA and then 
 
-# run BKNN instead of findneighbors. 
 library(Matrix)
 library(readxl)
 library(Seurat)
@@ -39,20 +38,18 @@ sampleParam <- read_excel(filename_sampleParam)
 filename = paste0('/home/sujwary/Desktop/scRNA/Param/','Cluster_ID_testNorm.xlsx')
 cluster_id_param = read_excel(filename)
 
-filename_metaData = '/home/sujwary/Desktop/scRNA/Data/EloRD Meta.xlsx'
-metaData = read_excel(filename_metaData)
-metaData = metaData[metaData$Run== 1,]
-#metaData = metaData[metaData$`Sample Type` == 'PBMC',]
-metaData = metaData[rowSums(is.na(metaData)) != ncol(metaData), ]
+#filename_metaData = '/home/sujwary/Desktop/scRNA/Data/EloRD Meta.xlsx'
+filename_metaData = '/disk2/Projects/EloRD_Nivo_PBMC/MetaData/metaData_EloRD_Nivo_PBMC.xlsx'
+metaData_old = read_excel(filename_metaData)
+metaData_old = metaData_old[metaData_old$Run== 1,]
 
-metaData = metaData[metaData$Sample !='BatchF',] # BatchF is crashing at quickCluster in scran norm
 
 sampleParam = sampleParam[sampleParam$Sample %in% metaData$Sample,]
 
 filename_sampleParam <- paste0('/home/sujwary/Desktop/scRNA/Data/sample_','Combine','_parameters.xlsx')
 sampleParam_combine <- read_excel(filename_sampleParam)
 
-downsample = read.csv('/home/sujwary/Desktop/scRNA/Output/CompareIntegration/DownSampleCells.csv')
+#downsample = read.csv('/home/sujwary/Desktop/scRNA/Output/CompareIntegration/DownSampleCells.csv')
 downsample  = NA #downsample$x
 
 # Original ELoRD data with no PBMCs
@@ -62,10 +59,10 @@ harmony_groupby = 'Sample_Kit'
 base = '/home/sujwary/Desktop/scRNA/Output/Harmony/'
 
 # EloRD data including our PBMCs and PBMCs for HCA
-# sample_type = 'Harmony_AllSamples_PBMC_Sample_Kit'
-# folder_name = 'AllSamples_PBMC'
-# harmony_groupby = 'Sample_Kit'
-# base = '/disk2/Projects/EloRD/Output/Harmony/'
+sample_type = 'Harmony_AllSamples_PBMC_Sample_Kit'
+folder_name = 'AllSamples_PBMC'
+harmony_groupby = 'Sample_Kit'
+base = '/disk2/Projects/EloRD/Output/Harmony/'
 
 # # 
 # EloRD data + our PBMCs + PBMCs for HCA
@@ -79,14 +76,28 @@ base = '/home/sujwary/Desktop/scRNA/Output/Harmony/'
 # folder_name = 'AllSamples_PBMC_NPBMC_HCL'
 # harmony_groupby = 'Sample_kit_tech'
 # base = '/disk2/Projects/EloRD/Output/Harmony/'
+# soup_base = '/disk2/Projects/EloRD/Output/Soup_MT_C100/'
 
+
+#EloRD data + Nivo + Oksana data
+sample_type = 'EloRD_Nivo_Oksana_Sample_kit' 
+folder_name = 'EloRD_Nivo_Oksana'
+harmony_groupby = 'Sample_kit'
+base = '/disk2/Projects/EloRD_Nivo_Oksana/Harmony/'
+filename_metaData = '/disk2/Projects/EloRD_Nivo_Oksana/MetaData/10X Sequenced Samples.xlsx'
+soup_base = '/disk2/Projects/EloRD_Nivo_Oksana/Output/Soup_MT_C100/'
 #sample_type = 'Harmony_PBMC_Sample_Kit'
 
+metaData = read_excel(filename_metaData)
+metaData = metaData[metaData$Run== 1,]
+#metaData = metaData[metaData$Technology != 'Microwell',]
+metaData = metaData[rowSums(is.na(metaData)) != ncol(metaData), ]
 
-#folder_name = 'PBMC'
+metaData = metaData[metaData$Sample !='BatchF',] # BatchF is crashing at quickCluster in scran norm
 
-
-
+metaData_new = merge(metaData,metaData_old, by = 'Sample', all.x = TRUE,sort = FALSE)
+metaData = metaData_new[match( metaData$Sample,metaData_new$Sample),]
+names(metaData) = gsub(".x","",names(metaData),fixed = TRUE)
 
 
 PCA_dim = sampleParam_combine$PCA_dim[sampleParam_combine['Sample'] == sample_type]
@@ -113,17 +124,21 @@ sample_list = metaData$Sample
 #sample_list = sample_list[c(1, 3:8)]
 
 
-folder = paste0(base,folder_name,
+folder = paste0(base,
                 '/Batch_',harmony_groupby,'/')
 dir.create(folder,recursive = T)
 
 sample_name = sample_list[1]
 print(sample_name)
-folder_input = paste0('/disk2/Projects/EloRD/Output/Soup_MT_C100/', sample_name , '/')
-data_1 = loadRData(paste0(folder_input,sample_name,'.Robj'))
+#folder_input = paste0('/disk2/Projects/EloRD/Output/Soup_MT_C100/', sample_name , '/')
+#data_1 = loadRData(paste0(folder_input,sample_name,'.Robj'))
 
 run = F
 
+#table = table(metaData$Sample,metaData$`Patient Number`)
+#write.csv(table,'/disk2/Projects/EloRD_Nivo_Oksana/SampleByPatient.csv')
+
+sample_name = 'NL1231BM'
 if (run){
   data_list = vector(mode = "list",length = length(sample_list))
   data_list_norm = vector(mode = "list",length = length(sample_list))
@@ -131,7 +146,7 @@ if (run){
   for (i in 1:length(sample_list)){
     sample_name = sample_list[i]
     print(sample_name)
-    folder_input = paste0('/disk2/Projects/EloRD/Output/Soup_MT_C100/', sample_name , '/')
+    folder_input = paste0(soup_base, sample_name , '/')
     data_i = loadRData(paste0(folder_input,sample_name,'.Robj'))
     data_i$sample = sample_name
 
@@ -140,7 +155,7 @@ if (run){
     #cellIdents$x = paste0(cellIdents$x, ' S', i)
     #data_i$CellType = cellIdents
     #data_i = data_i[,data_i$nFeature_RNA > 200]
-    data_i = load_emptyDrops(data_i)
+    data_i = load_emptyDrops(data_i,'/disk2/Projects/EloRD_Nivo_Oksana/Output/EmptyCells/')
     data_i$is_cell[is.na(data_i$is_cell) ] = T # Not sure why there's NA values
     #print(unique(data_i$is_cell))
     print(sum(!data_i$is_cell == T))
@@ -148,7 +163,7 @@ if (run){
     # remove empty drops
     data_i = data_i[,data_i$is_cell]
     
-    data_i = data_i[rownames(data_1),]
+    #data_i = data_i[rownames(data_1),]
     # Remove MT > 15 already done
     if (!is.na(downsample)){
       downsample = sub("_.*", "", downsample)
@@ -185,15 +200,15 @@ if (run){
   #data_harmony_run = ScaleData(data_harmony_run, vars.to.regress = c('kit'))
   data_merge_run = ScaleData(data_merge_run)
   
-  data_merge_run = RunPCA(data_merge_run,npcs = 70)
+  data_merge_run = RunPCA(data_merge_run,npcs = 90)
   
   reduction = 'pca'
 
 
-  visualize_PCA(data_merge_run,folder,70,reduction)
+  visualize_PCA(data_merge_run,folder,90,reduction)
   
   
-  PCA_dim = 60
+  PCA_dim = 80
   resolution_val = 1
   data_merge_run = RunUMAP(reduction = "pca",data_merge_run, dims = 1:PCA_dim)
   data_merge_run = FindNeighbors(data_merge_run, reduction = "pca", dims = 1:PCA_dim)
@@ -202,21 +217,22 @@ if (run){
   data_merge_run$FeatureLessThan400 = data_merge_run$nFeature_RNA < 400
   data_merge_run$kit = data_merge_run$`10X kit`
   
-  folder = paste0(base,folder_name,
-                  '/Merge','/')
+  folder = paste0(base,
+                  '/Merge/')
+  dir.create(folder)
   path = paste0(folder,'data_merge_run','.Robj')
   save(data_merge_run,file= path)
-  data_merge_run = loadRData((path))
+  #data_merge_run = loadRData((path))
   
   data_merge_run$split_var = ''
   
-  metaData = read_excel(filename_metaData)
+  #metaData = read_excel(filename_metaData)
   data_merge_run = addMetaData(data_merge_run, metaData)
   data_merge_run$kit = data_merge_run$`10X kit`
   #
   groupBy_list = c('sample','Diagnosis','kit',
-                   'Treatment','Batch','LowCount',
-                   'FeatureLessThan400','Sample Type','Technology')
+                   'Batch','LowCount',
+                   'FeatureLessThan400','Sample Type','Gender','Race')
   featurePlot_list = c('percent.mt','nCount_RNA','G2M.Score','S.Score')
   splitBy_list = NA
   
@@ -235,11 +251,10 @@ if (run){
   
   
   harmony_dim = PCA_dim
-  data_harmony_run = RunHarmony(data_merge_run,group.by.vars =  c("kit",'sample','Technology'),
+  data_harmony_run = RunHarmony(data_merge_run,group.by.vars =  c("kit",'sample'),
                                 dims.use = 1:harmony_dim)
   
-  folder = paste0(base,folder_name,
-                  '/Batch_',harmony_groupby,'/')
+  folder = paste0(base,'/Batch_',harmony_groupby,'/')
   reduction = 'harmony'
   visualize_PCA(data_harmony_run,folder,harmony_dim,reduction)
   
@@ -275,7 +290,7 @@ if (run){
 
   path = '/home/sujwary/Desktop/scRNA/Output/Harmony/AllSamples/Batch_Sample_Kit/Cluster/PCA30/res3//Data/Labels.csv'
   data_harmony_run = addOldLabels(path,data_harmony_run, 'OldCellType')
-  #data_harmony_run_label = LoadSubset(data_harmony_run_label,sampleParam_combine, folder)
+
   data_harmony_run_label = label_cells(data_harmony_run,cluster_IDs)
   
   celltype = 'Mono_DC'
@@ -389,7 +404,7 @@ if (run){
 
 
 data_harmony_run$GeneralCellType = ''
-metaData = read_excel(filename_metaData)
+#metaData = read_excel(filename_metaData)
 
 
 table(data_harmony_run$sample)
@@ -465,9 +480,10 @@ dev.off()
 
 cell_features = getCellMarkers('/home/sujwary/Desktop/scRNA/')
 
-groupBy_list = c('sample','Diagnosis','kit',
+groupBy_list = c('sample','Diagnosis','kit','Gender',
                  'Treatment','Batch','LowCount',
-                 'Doublet','GeneralCellType','FeatureLessThan400','Sample Type')
+                 'Doublet','GeneralCellType','FeatureLessThan400',
+                 'Sample Type','Race')
 #groupBy_list = c('sample')
 featurePlot_list = c('percent.mt','nCount_RNA','G2M.Score','S.Score','DR')
 splitBy_list = NA
@@ -475,12 +491,14 @@ splitBy_list = NA
 #data = as.data.frame(data_harmony_run@assays[["RNA"]]@counts)
 #DR = as.numeric(apply(data,2, function(x) sum(x > 0)/nrow(data)))
 #data_harmony_run$DR = DR
+unique(data_harmony_run$`Sample Type`)
+unique(data_harmony_run$sample[data_harmony_run$`Sample Type` == 'Peripheral Blood'])
 
 plotAll(data_harmony_run, folder = folder, 
         sample_name,sampleParam = NA,
         cell_features = cell_features, plot_PCA = F,
-        label_TF = F,integrate_TF = F,  DE_perm_TF = T, 
-        clusterTF =F, markersTF = F,
+        label_TF = F,integrate_TF = F,  DE_perm_TF = F, 
+        clusterTF =F, markersTF = T,
         groupBy = groupBy_list, splitBy = splitBy_list,featurePlot_list = featurePlot_list,
         PCA_dim = PCA_dim,resolution_val = resolution_val)
 

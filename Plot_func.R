@@ -1440,7 +1440,7 @@ PlotProportions = function(data){
 
 
 
-VolcanoPlotHelper = function(data_input_bl_long,var1,var2,base, str = ''){
+VolcanoPlotHelper = function(data_input_bl_long,var1,var2,base, str = '',xmin = -4, xmax = 4){
   #browser()
   dir.create(base)
   volmat <- matrix(nrow=length(unique(data_input_bl_long$Cell_Type)), ncol=6)
@@ -1482,8 +1482,8 @@ VolcanoPlotHelper = function(data_input_bl_long,var1,var2,base, str = ''){
   g <- rasterGrob(crange, width=unit(1,"npc"), height = unit(1,"npc"),interpolate = TRUE)
   
   fontSize = 12
-  xmin = -4
-  xmax = 4
+  #xmin = -4
+  #xmax = 4
   pdf(paste0(base,'Composition Volcano Plot_',var1,'Vs',var2,str,'.pdf'), width = 6,height = 6)
   plot = ggplot(volmat,aes(x=LFC, y=-log10(Wilcoxon_p)), size=12) +
     annotation_custom(g, xmin=xmin , xmax=xmax, ymin=-.2, ymax=6) +
