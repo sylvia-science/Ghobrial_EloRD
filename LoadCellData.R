@@ -152,7 +152,10 @@ addMetaData = function(data, metaData){
         #browser()
       }
       #browser()
-      metaData_sample_val = metaData[,colname][metaData$Sample == sample]
+      values = (as.data.frame(metaData[,colname]))
+      values = as.character(values[,1])
+      
+      metaData_sample_val = values[metaData$Sample == sample]
       metaData_sample_val = metaData_sample_val[[1]]
       if(length(metaData_sample_val) == 0){
         next

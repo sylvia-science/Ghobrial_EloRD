@@ -8,6 +8,7 @@ library(SoupX)
 source('/home/sujwary/Desktop/scRNA/Code/Plot_func.R')
 source('/home/sujwary/Desktop/scRNA/Code/Functions.R')
 output_folder = '/disk2/Projects/EloRD_Nivo_Oksana/Output/Soup_MT_C100/'
+output_folder = '/disk2/Projects/MMRF/Output/Soup_MT_C100/'
 
 data_folder = "/home/sujwary/Desktop/scRNA/Data/"
 filename_metaData = '/home/sujwary/Desktop/scRNA/Data/EloRD Meta.xlsx'
@@ -18,7 +19,13 @@ filename_metaData = '/disk2/Projects/EloRD_Nivo_PBMC/MetaData/metaData_EloRD_Niv
 data_folder = '/disk2/Projects/EloRD_Nivo_Oksana/Data/'
 filename_metaData = '/disk2/Projects/EloRD_Nivo_Oksana/MetaData/10X Sequenced Samples.xlsx'
 
+data_folder = '/disk2/Projects/MMRF/Data/'
+filename_metaData = '/disk2/Projects/MMRF/MetaData/MetaData.csv'
+
+
 metaData = read_excel(filename_metaData)
+metaData = read.csv(filename_metaData)
+
 metaData = metaData[metaData$Run== 1,]
 #metaData = metaData[metaData$`Sample Type` == 'PBMC',]
 #metaData = metaData[rowSums(is.na(metaData)) != ncol(metaData), ]
@@ -27,22 +34,22 @@ metaData = metaData[metaData$Run== 1,]
 
 
 
-filename_sampleParam <- paste0('/home/sujwary/Desktop/scRNA/Data/sample','_parameters.xlsx')
-sampleParam <- read_excel(filename_sampleParam)
+#filename_sampleParam <- paste0('/home/sujwary/Desktop/scRNA/Data/sample','_parameters.xlsx')
+#sampleParam <- read_excel(filename_sampleParam)
 
-sampleParam = sampleParam[sampleParam$Sample %in% metaData$Sample,]
+#sampleParam = sampleParam[sampleParam$Sample %in% metaData$Sample,]
 
-i = 39
+i = 1
 
 # Soup + MT + Normal threshold
 
 sample_list = c('GL1497BM', 'GL1160BM', 'GL2923BM', 'GL3404BM', 'NBM6CD138N', 'NBM12CD138N', 'GL2185BM', 'GL3417BM', 'GL2653BM')
 
 #sample_list = c('GL3404BM')
-i = 55
+i = 29
 run = T
-for (i in 59:nrow(metaData)){
-  
+for (i in 1:nrow(metaData)){
+  sample_name = metaData$Sample[i]
   folder = paste0(output_folder,sample_name,'/')
   dir.create(folder,recursive = T)
   path = paste0(folder,'/',sample_name,'.Robj')
@@ -51,7 +58,6 @@ for (i in 59:nrow(metaData)){
     #next
   }
   
-  sample_name =  metaData$Sample[i]
   #sample_name = metaData$Sample[i]
   #sample_name = sample_list[i]
   #sample_name = 'GL1160BM'
@@ -243,6 +249,36 @@ for (i in 59:nrow(metaData)){
   }
 ###################################
  
+  gene_list = c('CD3D', 'CD3G', 'CD3E', 'CD8A', 'CD8B', 'IL7R', 'SELL', 'CD14', 'FCGR3A', 'NKG7', 'MS4A1', 'IGKC', 'IGHM', 'CD19', 'MZB1', 'CD34', 'CDK6',
+                'FCER1A','FUT4', 'ELANE', 'MPO', 'HBA2', 'HBB', 'LYZ', 'TNFRSF17')
+  
+  for (j in 1:length(gene_list)){
+    gene = gene_list[j]
+    print(gene)
+    #browser()
+    folder = paste0(output_folder,sample_name,'/','Featureplots/')
+    dir.create(folder,recursive = T)
+    
+    plot = FeaturePlotFix(data_i_filtered_run, feature = gene, folder =folder,
+                          str = '',split = F, markerSize = 3,gene_TF = TRUE,title = '',saveTF = FALSE)
+    plot = plot + theme(
+      axis.title.x = element_text(color="black", size=24 ),
+      axis.title.y = element_text(color="black", size=24),
+      axis.text= element_text(color="black", size=24),
+      legend.text=element_text(size=24),
+      legend.title=element_text(size=24),
+      text = element_text(size = 20)
+    )
+    
+    file_str = ''
+    pathName = paste0(folder,'Pre_Soup_',gene,file_str,'.png')
+    png(filename = pathName,width=2000, height=2000)
+    print(plot)
+    dev.off()
+    remove(plot)
+    
+  }
+  
   Idents(data_i_filtered_run) = ''
   folder = paste0(output_folder,sample_name,'/')
   pathName <- paste0(folder, 'QC_PostFilter.png')
@@ -253,6 +289,14 @@ for (i in 59:nrow(metaData)){
   dev.off()
   
   data_i_filtered_soup = data_i_filtered_soup[, data_i_filtered_soup$percent.mt < 15]
+  
+  folder = paste0(output_folder,sample_name,'/')
+  pathName <- paste0(folder, 'QC_PostFilterMT.png')
+  png(file=pathName,width=500, height=500)
+  plot = VlnPlot(data_i_filtered_soup, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"),
+                 ncol = 3,pt.size = 0,split.by = NULL)
+  print(plot)
+  dev.off()
   
   data_i_filtered_soup_run = NormalizeData(data_i_filtered_soup, normalization.method = "LogNormalize", scale.factor = 10000)
   #data_i_filtered_run = ScranNorm(data_i_filtered)
@@ -329,8 +373,7 @@ for (i in 59:nrow(metaData)){
     )
     
     file_str = ''
-    pathName = paste0(folder,gene,file_str,'.png')
-    pathName = paste0(folder,gene,'','.png')
+    pathName = paste0(folder,'Post_Soup_',gene,'','.png')
     png(filename = pathName,width=2000, height=2000)
     print(plot)
     dev.off()

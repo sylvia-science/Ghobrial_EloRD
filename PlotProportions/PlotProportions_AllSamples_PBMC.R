@@ -5,7 +5,7 @@ source('~/Desktop/scRNA/Code/Plot_func.R')
 base = '/disk2/Projects/EloRD/Output/Harmony/AllSamples_PBMC/Batch_Sample_Kit/Cluster/PCA40/res3/Plots/'
 
 remove_list = c('HSC','Pro Erythrocyte','Plasma Cell','GMPC',
-                'Pro B-cell','Pre B-cell','CMPC','Erythrocyte','MDPC','41','49')
+                'Pro B-cell','Pre B-cell','CMPC','Erythrocyte','MDPC', 1:20)
 data_run_label = data_harmony_run_label[,!(Idents(data_harmony_run_label) %in% remove_list)]
 data_run_label = data_harmony_run_label
 data_run_label = data_run_label[,data_run_label$Treatment %in% c('baseline','NBM')]

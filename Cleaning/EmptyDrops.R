@@ -16,6 +16,11 @@ data_folder = '/disk2/Projects/EloRD_Nivo_Oksana/Data/'
 output_folder = '/disk2/Projects/EloRD_Nivo_Oksana/Output/EmptyCells/'
 filename_metaData = '/disk2/Projects/EloRD_Nivo_Oksana/MetaData/10X Sequenced Samples.xlsx'
 
+data_folder = '/disk2/Projects/MMRF/Data/'
+output_folder = '/disk2/Projects/MMRF/Output/EmptyCells/'
+filename_metaData = '/disk2/Projects/MMRF/MetaData/MetaData.csv'
+
+
 metaData = read_excel(filename_metaData)
 metaData = metaData[metaData$Run== 1,]
 #metaData = metaData[metaData$`Sample Type` == 'PBMC',]
@@ -23,12 +28,12 @@ metaData = metaData[metaData$Run== 1,]
 #metaData = metaData[metaData$`10X kit` == 'Microwell-seq',]
 #metaData = metaData[metaData$Study == 'Nivo',]
 
-sample_name = 'NL1065CD45NBM'
+sample_name = 'MMRF20A'
 filename_sampleParam <- paste0('/home/sujwary/Desktop/scRNA/Data/sample_parameters.xlsx')
 sampleParam <- read_excel(filename_sampleParam)
-i = 1
+i = 29
 
-for (i in 59:nrow(metaData) ){
+for (i in 2:nrow(metaData) ){
 
   sample_name = metaData$Sample[i]
   print(sample_name)
@@ -55,6 +60,7 @@ for (i in 59:nrow(metaData) ){
     data_i_raw = CreateSeuratObject(data_i_raw,  project = "BM",min.cells = 3, min.features = 1)
     
   }else{
+    file_list  = list.files(path = data_folder)
     filename = file_list[startsWith(file_list,paste0(sample_name,'_raw') )]
     path = paste0(data_folder,filename)
     

@@ -1442,6 +1442,8 @@ PlotProportions = function(data){
 
 VolcanoPlotHelper = function(data_input_bl_long,var1,var2,base, str = '',xmin = -4, xmax = 4){
   #browser()
+  library(grid)
+  library(ggrepel)
   dir.create(base)
   volmat <- matrix(nrow=length(unique(data_input_bl_long$Cell_Type)), ncol=6)
   colnames(volmat) <- c("Cell_Type","Wilcoxon_p", "FDR", "mean_var1", "mean_var2", "LFC")
