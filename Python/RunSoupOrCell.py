@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue Aug 25 20:32:21 2020
-
 @author: sujwary
 """
 
@@ -10,7 +9,6 @@ Created on Tue Aug 25 20:32:21 2020
 # -*- coding: utf-8 -*-
 """
 Created on Thu Aug 20 15:36:59 2020
-
 @author: sujwary
 """
 
@@ -43,7 +41,6 @@ for i in range(0,(metaData.shape[0])):
     command = 'singularity exec /disk2/Projects/Code/souporcell.sif souporcell_pipeline.py '
     command = command + '-i ' + sample_name + '.bam '
     command = command + '-b ' + sample_name + '_out_cell_barcodes.csv '
-    #command = command + '-f ' + base + 'ReferenceData/refdata-cellranger-GRCh38-1.2.0.fasta '
     command = command + '-f ' + '/home/sujwary/Downloads/GRCH38/Homo_sapiens.GRCh38.dna.primary_assembly.fa '
 
     command = command +  '-t 8 '
@@ -69,10 +66,10 @@ for i in range(0,(metaData.shape[0])):
     #command = command +  '--ref-fasta ' + '/home/sujwary/Desktop/refdata-cellranger-atac-GRCh38-1.2.0/fasta/genome.fa '
     #command = command +  '--ref-fasta ' + '/disk2/Projects/EloRD/Data/Bam/ReferenceData/refdata-cellranger-GRCh38-1.2.0.fasta '
     
+    #command = command + 'perl  /disk2/Projects/Code/mskcc-vcf2maf-47c4a18/vcf2maf.pl '
+    command = command + '--filter-vcf 0 --vep-path /disk2/Projects/Code/ensembl-vep/ '
     command = command + '--ref-fasta /home/sujwary/Downloads/GRCH38/Homo_sapiens.GRCh38.dna.primary_assembly.fa '
-    command = command + 'perl  /disk2/Projects/Code/mskcc-vcf2maf-47c4a18/vcf2maf.pl '
-    command = command + '--filter-vcf 0 --vep-path /disk2/Projects/Code/ensembl-vep/'
-    
+
     file = base + sample_name + '_demux_data/' + 'souporcell_merged_sorted_vcf.vcf'
     if path.exists(file + '.gz') and not path.exists(file):
         with gzip.open(file + '.gz', 'rb') as f_in:
@@ -83,6 +80,3 @@ for i in range(0,(metaData.shape[0])):
     if path.exists(base + sample_name + '_demux_data/' + 'souporcell_merged_sorted_vcf.vcf') and not path.exists(base + sample_name + '_demux_data_harmony/' + sample_name + '.vep.maf'):
         print(command)
         os.system(command)
-        
-
-
