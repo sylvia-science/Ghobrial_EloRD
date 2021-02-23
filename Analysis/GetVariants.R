@@ -10,8 +10,8 @@ library(numbers)
 source('~/Desktop/scRNA/Code/Integrate All/LoadHarmonyData.R')
 
 
-base = '/disk2/Projects/EloRD/Data/Bam/PBMC/'
-sample = 'GL1024BM'
+base = '/disk2/Projects/EloRD/Data/Bam/'
+sample = 'GL1305BM'
 
 # Seurat
 filename_metaData = '/home/sujwary/Desktop/scRNA/Data/EloRD Meta.xlsx'
@@ -28,8 +28,8 @@ colnames(bed) = c('chrom','chromStart','chromEnd','ref','alt','score','strand',
                   'thickStart','thickEnd','itemRgb','blockCount','blockSizes','blockStarts')
 
 max(bed)
-data = LoadHarmonyData (metaData, sampleParam_combine)
-data_label = data[[1]]
+
+data_label = data_harmony_run_label
 sample_list = unique(data_label$sample )
 
 sample_list = metaData$Sample
@@ -57,7 +57,7 @@ tmp = maf_all_meta[maf_all_meta$Hugo_Symbol == 'OR13C3',]
 for (i in 1:length(sample_list)){
   sample = sample_list[i]
   print(sample)
-  data_label = data[[1]]
+  #data_label = data[[1]]
   filepath_cluster = data[[2]]
   
   #data_label = data_label[,data_label$sample == sample]
@@ -73,8 +73,9 @@ for (i in 1:length(sample_list)){
   write.table(barcode,file, sep = ',', row.names = F, col.names = F, quote = F)
 
 }
-
+###################################
 ## Load files and save maf data
+###################################
 str = '_harmony'
 str = ''
 for (i in 1:length(sample_list)){
@@ -82,8 +83,8 @@ for (i in 1:length(sample_list)){
   sample = sample_list[i]
   print(sample)
 
-  data_label = data[[1]]
-  filepath_cluster = data[[2]]
+  #data_label = data[[1]]
+  #filepath_cluster = data[[2]]
   if ( !file.exists(paste0(base, sample, '_out_cell_barcodes', str , '.csv'))){
     #next
   }
@@ -94,13 +95,15 @@ for (i in 1:length(sample_list)){
   barcodes = as.character(barcodes$V1)
   length(barcodes)
   
-  barcode_filter = read.csv(paste0(base,sample,"_out_cell_barcodes_cellranger.csv"), header = F)
-  barcode_filter = as.character(barcode_filter$V1)
+  #barcode_filter = read.csv(paste0(base,sample,"_out_cell_barcodes_cellranger.csv"), header = F)
+  #barcode_filter = as.character(barcode_filter$V1)
   #barcodes = Read10X_h5(filename, use.names = TRUE, unique.features = TRUE)
-  #barcode_filter = colnames(data_sample)
-  
+  data_label_subset = data_label[,data_label$sample == sample]
+  barcode_filter = sub("_.*", "", colnames(data_label_subset))
+
+  length(barcode_filter)
   ## MMTX
-  
+  #str = '_harmony'
   ref = readMM(paste0(base, sample,'_demux_data',str,'/ref.mtx'))
   alt = readMM(paste0(base, sample,'_demux_data',str,'/alt.mtx'))
   dim(ref)
@@ -108,9 +111,8 @@ for (i in 1:length(sample_list)){
   colnames(ref) = barcodes
   colnames(alt) = barcodes
   
-  ref = ref[,barcode_filter]
-  alt = alt[,barcode_filter]
-  barcodes = colnames(ref)
+  ref = ref[colnames(ref)  %in% barcode_filter,]
+  alt = alt[colnames(alt)  %in% barcode_filter,]
   ## VCF
 
   file_vcf = paste0(base, sample,
@@ -131,7 +133,7 @@ for (i in 1:length(sample_list)){
                  useAll = TRUE)
   
   
-  cluster_list = levels(unique(Idents(data_label)))
+  #cluster_list = levels(unique(Idents(data_label)))
   
 
   #vcf_subset = vcf[rowSums(alt)!= 0 || rowSums(ref)!= 0,]
@@ -146,7 +148,7 @@ for (i in 1:length(sample_list)){
   names(ident_list) <-gsub("_.*","",names(ident_list) )
   
   cnt = 1
-  for(bc in barcodes){
+  for(bc in barcode_filter){
     
     if (mod(cnt,100) == 0){
       print(cnt)

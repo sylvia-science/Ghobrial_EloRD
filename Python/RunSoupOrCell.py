@@ -28,11 +28,11 @@ metaData = pd.read_excel(filename_metaData)
 #metaData = metaData[metaData['Run']== 1]
 metaData = metaData[metaData['Sample Type']== 'PBMC']
 
-
 base = '/disk2/Projects/EloRD/Data/Bam/PBMC/'
+base = '/disk2/Projects/EloRD/Data/Bam/'
 os.chdir(base)
 
-#sample_name = 'NBM7CD138N'
+sample_name = 'GL1305BM'
 for i in range(0,(metaData.shape[0])):
     sample_name = metaData['Sample'].iloc[i]
     print(sample_name)
@@ -43,7 +43,9 @@ for i in range(0,(metaData.shape[0])):
     command = 'singularity exec /disk2/Projects/Code/souporcell.sif souporcell_pipeline.py '
     command = command + '-i ' + sample_name + '.bam '
     command = command + '-b ' + sample_name + '_out_cell_barcodes.csv '
-    command = command + '-f ' + base + 'ReferenceData/refdata-cellranger-GRCh38-1.2.0.fasta '
+    #command = command + '-f ' + base + 'ReferenceData/refdata-cellranger-GRCh38-1.2.0.fasta '
+    command = command + '-f ' + '/home/sujwary/Downloads/GRCH38/Homo_sapiens.GRCh38.dna.primary_assembly.fa '
+
     command = command +  '-t 8 '
     command = command + '-o ' + output + ' '
     command = command + '-k 8 '
@@ -64,7 +66,10 @@ for i in range(0,(metaData.shape[0])):
     command = 'perl  /disk2/Projects/Code/mskcc-vcf2maf-47c4a18/vcf2maf.pl '
     command = command + '--input-vcf ' + output + 'souporcell_merged_sorted_vcf.vcf '
     command = command + '--output-maf ' +  output + sample_name + '.vep.maf '
-    command = command + '--ref-fasta /disk2/Projects/EloRD/Data/ReferenceData/refdata-cellranger-GRCh38-1.2.0.fasta '
+    #command = command +  '--ref-fasta ' + '/home/sujwary/Desktop/refdata-cellranger-atac-GRCh38-1.2.0/fasta/genome.fa '
+    #command = command +  '--ref-fasta ' + '/disk2/Projects/EloRD/Data/Bam/ReferenceData/refdata-cellranger-GRCh38-1.2.0.fasta '
+    
+    command = command + '--ref-fasta /home/sujwary/Downloads/GRCH38/Homo_sapiens.GRCh38.dna.primary_assembly.fa '
     command = command + 'perl  /disk2/Projects/Code/mskcc-vcf2maf-47c4a18/vcf2maf.pl '
     command = command + '--filter-vcf 0 --vep-path /disk2/Projects/Code/ensembl-vep/'
     

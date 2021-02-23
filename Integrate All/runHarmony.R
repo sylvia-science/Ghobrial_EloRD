@@ -80,13 +80,13 @@ base = '/home/sujwary/Desktop/scRNA/Output/Harmony/'
 
 
 #EloRD data + Nivo + Oksana data
-sample_type = 'EloRD_Nivo_Oksana_Sample_kit'
-folder_name = 'EloRD_Nivo_Oksana'
-harmony_groupby = 'Sample_kit'
-base = '/disk2/Projects/EloRD_Nivo_Oksana/Harmony/'
-filename_metaData = '/disk2/Projects/EloRD_Nivo_Oksana/MetaData/10X Sequenced Samples.xlsx'
-soup_base = '/disk2/Projects/EloRD_Nivo_Oksana/Output/Soup_MT_C100/'
-#sample_type = 'Harmony_PBMC_Sample_Kit'
+# sample_type = 'EloRD_Nivo_Oksana_Sample_kit'
+# folder_name = 'EloRD_Nivo_Oksana'
+# harmony_groupby = 'Sample_kit'
+# base = '/disk2/Projects/EloRD_Nivo_Oksana/Harmony/'
+# filename_metaData = '/disk2/Projects/EloRD_Nivo_Oksana/MetaData/10X Sequenced Samples.xlsx'
+# soup_base = '/disk2/Projects/EloRD_Nivo_Oksana/Output/Soup_MT_C100/'
+# #sample_type = 'Harmony_PBMC_Sample_Kit'
 
 metaData = read_excel(filename_metaData)
 metaData = metaData[metaData$Run== 1,]

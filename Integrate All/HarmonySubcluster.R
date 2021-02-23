@@ -711,8 +711,8 @@ cluster_list2 = cluster_list1
 
 cluster_list1 = 1
 cluster_list2 = 0:35
-cluster_list1 = 4
-cluster_list2 = c(3,8)
+cluster_list1 = 12
+cluster_list2 = c(19)
 
 cluster1 = 27
 cluster2 = 24
