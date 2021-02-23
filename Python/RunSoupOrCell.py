@@ -24,7 +24,7 @@ import shutil
 filename_metaData = '/home/sujwary/Desktop/scRNA/Data/EloRD Meta.xlsx'
 metaData = pd.read_excel(filename_metaData)
 #metaData = metaData[metaData['Run']== 1]
-metaData = metaData[metaData['Sample Type']== 'PBMC']
+#metaData = metaData[metaData['Sample Type']== 'PBMC']
 
 base = '/disk2/Projects/EloRD/Data/Bam/PBMC/'
 base = '/disk2/Projects/EloRD/Data/Bam/'
@@ -69,7 +69,7 @@ for i in range(0,(metaData.shape[0])):
     #command = command + 'perl  /disk2/Projects/Code/mskcc-vcf2maf-47c4a18/vcf2maf.pl '
     command = command + '--filter-vcf 0 --vep-path /disk2/Projects/Code/ensembl-vep/ '
     command = command + '--ref-fasta /home/sujwary/Downloads/GRCH38/Homo_sapiens.GRCh38.dna.primary_assembly.fa '
-
+    command = command + '--ncbi-build GRCh38 '
     file = base + sample_name + '_demux_data/' + 'souporcell_merged_sorted_vcf.vcf'
     if path.exists(file + '.gz') and not path.exists(file):
         with gzip.open(file + '.gz', 'rb') as f_in:

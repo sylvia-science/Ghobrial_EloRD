@@ -16,7 +16,7 @@ sample = 'GL1305BM'
 # Seurat
 filename_metaData = '/home/sujwary/Desktop/scRNA/Data/EloRD Meta.xlsx'
 metaData = read_excel(filename_metaData)
-metaData = metaData[metaData$Run== 1 || metaData$`Sample Type` == 'PBMC',]
+#metaData = metaData[metaData$Run== 1 || metaData$`Sample Type` == 'PBMC',]
 #metaData = metaData[metaData$Run== 1,]
 
 filename_sampleParam <- paste0('/home/sujwary/Desktop/scRNA/Data/sample_','Combine','_parameters.xlsx')
@@ -32,7 +32,7 @@ max(bed)
 data_label = data_harmony_run_label
 sample_list = unique(data_label$sample )
 
-sample_list = metaData$Sample
+#sample_list = metaData$Sample
 
 plot = DimPlot(data_label,pt.size = 0.7, reduction = "umap",label = TRUE,
                label.size = 6)
@@ -58,7 +58,7 @@ for (i in 1:length(sample_list)){
   sample = sample_list[i]
   print(sample)
   #data_label = data[[1]]
-  filepath_cluster = data[[2]]
+  #filepath_cluster = data[[2]]
   
   #data_label = data_label[,data_label$sample == sample]
   #barcode_harmony = colnames(data_label)
@@ -85,8 +85,8 @@ for (i in 1:length(sample_list)){
 
   #data_label = data[[1]]
   #filepath_cluster = data[[2]]
-  if ( !file.exists(paste0(base, sample, '_out_cell_barcodes', str , '.csv'))){
-    #next
+  if ( !file.exists(paste0('/disk2/Projects/EloRD/Output/MafResults/',sample,'.csv'))){
+    next
   }
 
   # barcodes
@@ -111,8 +111,8 @@ for (i in 1:length(sample_list)){
   colnames(ref) = barcodes
   colnames(alt) = barcodes
   
-  ref = ref[colnames(ref)  %in% barcode_filter,]
-  alt = alt[colnames(alt)  %in% barcode_filter,]
+  ref = ref[,colnames(ref)  %in% barcode_filter]
+  alt = alt[,colnames(alt)  %in% barcode_filter]
   ## VCF
 
   file_vcf = paste0(base, sample,
@@ -144,11 +144,11 @@ for (i in 1:length(sample_list)){
   colnames = c('Barcode','Sample','CellType','Alt','Ref',colnames(maf@data))
   maf_output = setNames(data.frame(matrix(ncol = length(colnames), nrow=0)), colnames)
   
-  ident_list = Idents(data_label)
+  ident_list = Idents(data_label_subset)
   names(ident_list) <-gsub("_.*","",names(ident_list) )
   
   cnt = 1
-  for(bc in barcode_filter){
+  for(bc in colnames(ref)){
     
     if (mod(cnt,100) == 0){
       print(cnt)
@@ -156,7 +156,7 @@ for (i in 1:length(sample_list)){
     }
     cnt = cnt + 1
     cellType = as.character(ident_list[names(ident_list) == bc])
-    cellType = ''
+    #cellType = ''
     alt_list = alt[,bc]
     ref_list = ref[,bc]
     pos_list = vcf$POS
