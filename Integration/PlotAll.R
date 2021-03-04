@@ -1,12 +1,10 @@
 plotAll = function(data,folder,sample_name,sampleParam,label_TF,
                    cell_features,
                    plot_PCA= F,
-                   integrate_TF = FALSE, # This is an old variable, keep it can stay false
-                   DE_perm_TF = FALSE, # If you want to do DE between cluster and each individual cluster
-                   clusterTF = F, # If you want to recluster (Good for if you are changing the resolution val)
-                   markersTF = T, # If you want to do DE between each cluster and all other clusters combined.
-                   groupBy = NA, # Varibles that will be used to make umap plots where the variables are split in the plot
-                   splitBy = NA,
+                   DE_perm_TF = FALSE, # Do DE between each cluster and each individual cluster
+                   markersTF = T, # Do DE between each cluster and all other clusters combined.
+                   groupBy = NA, # Variables that will be used to make umap plots where the variables are split in the plot
+                   splitBy = NA, # Variables to plot split in the umap
                    featurePlot_list = NA,
                    PCA_dim = NA, # If NA, will gram PCA_dim from sampleParam
                    resolution_val = NA, # If NA, will get resolution_val from sampleParam
@@ -95,10 +93,6 @@ plotAll = function(data,folder,sample_name,sampleParam,label_TF,
   
   #browser()
   
-  # Cluster with Umap
-  if (clusterTF == TRUE){
-    data = getCluster (data,resolution_val, PCA_dim)
-  }
     #data = FindNeighbors(data, dims = 1:PCA_dim)
     #data = FindClusters(data, resolution = resolution_val)
   

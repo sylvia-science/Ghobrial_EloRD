@@ -7,6 +7,10 @@ library(ggplot2)
 library(SoupX)
 source('/home/sujwary/Desktop/scRNA/Code/Plot_func.R')
 source('/home/sujwary/Desktop/scRNA/Code/Functions.R')
+
+#######################################
+## Run soupx on individual samples
+#######################################
 output_folder = '/disk2/Projects/EloRD_Nivo_Oksana/Output/Soup_MT_C100/'
 output_folder = '/disk2/Projects/MMRF/Output/Soup_MT_C100/'
 
@@ -19,11 +23,11 @@ filename_metaData = '/disk2/Projects/EloRD_Nivo_PBMC/MetaData/metaData_EloRD_Niv
 data_folder = '/disk2/Projects/EloRD_Nivo_Oksana/Data/'
 filename_metaData = '/disk2/Projects/EloRD_Nivo_Oksana/MetaData/10X Sequenced Samples.xlsx'
 
-data_folder = '/disk2/Projects/MMRF/Data/'
+data_folder = '/disk2/Projects/EloRD_Nivo_Oksana/Data/'
 filename_metaData = '/disk2/Projects/MMRF/MetaData/MetaData.csv'
 
 
-metaData = read_excel(filename_metaData)
+#metaData = read_excel(filename_metaData)
 metaData = read.csv(filename_metaData)
 
 metaData = metaData[metaData$Run== 1,]
@@ -33,43 +37,26 @@ metaData = metaData[metaData$Run== 1,]
 #metaData = metaData[metaData$`10X kit` == 'Microwell-seq',]
 
 
-
-#filename_sampleParam <- paste0('/home/sujwary/Desktop/scRNA/Data/sample','_parameters.xlsx')
-#sampleParam <- read_excel(filename_sampleParam)
-
-#sampleParam = sampleParam[sampleParam$Sample %in% metaData$Sample,]
-
 i = 1
+run = T
+sample_name = 'pM5639'
 
 # Soup + MT + Normal threshold
 
-sample_list = c('GL1497BM', 'GL1160BM', 'GL2923BM', 'GL3404BM', 'NBM6CD138N', 'NBM12CD138N', 'GL2185BM', 'GL3417BM', 'GL2653BM')
-
-#sample_list = c('GL3404BM')
-i = 29
-run = T
 for (i in 1:nrow(metaData)){
   sample_name = metaData$Sample[i]
+  print(sample_name)
   folder = paste0(output_folder,sample_name,'/')
   dir.create(folder,recursive = T)
   path = paste0(folder,'/',sample_name,'.Robj')
   if (file.exists(path)){
     print('File Exists')
-    #next
+    next
   }
-  
-  #sample_name = metaData$Sample[i]
-  #sample_name = sample_list[i]
-  #sample_name = 'GL1160BM'
-  print(sample_name)
-  #percent_mt = sampleParam$percent_mt_min[sampleParam['Sample'] == sample_name]
-  
-  #RNA_features_min = sampleParam$RNA_features_min[sampleParam['Sample'] == sample_name]
-  #RNA_features_max = sampleParam$RNA_features_max[sampleParam['Sample'] == sample_name]
-  
-  #filename = paste("/home/sujwary/Desktop/scRNA/Data/",sample_name,"_raw_feature_bc_matrix.h5",sep = "")
-
-  file_list = list.files(path = data_folder)
+  ############################################
+  # Load raw data with minimal filtering
+  ############################################
+  # Files from the HCL need to be read in differently
   HCL_list = c('Adult-Bone-Marrow1','Adult-Bone-Marrow2',
                'Adult-Peripheral-Blood1','Adult-Peripheral-Blood2','Adult-Peripheral-Blood3','Adult-Peripheral-Blood4')
   if (sample_name %in% HCL_list){
@@ -85,6 +72,7 @@ for (i in 1:nrow(metaData)){
     data_i_raw = CreateSeuratObject(data_i_raw,  project = "BM",min.cells = 3, min.features = 1)
     
   }else{
+    file_list = list.files(path = data_folder)
     filename = file_list[startsWith(file_list,paste0(sample_name,'_raw') )]
     path = paste0(data_folder,filename)
     
@@ -92,6 +80,8 @@ for (i in 1:nrow(metaData)){
     data_i_raw = Read10X_h5(path, use.names = TRUE, unique.features = TRUE)
     data_i_raw = CreateSeuratObject(counts = data_i_raw, project = "BM", min.cells = 3, min.features = 1)
   }
+  
+  ## Filter for minimum number of counts
   colSum_list = colSums(data_i_raw ) # Needs to be from Matrix library
   mincount = 100
   keep = colSum_list >= 100
@@ -102,15 +92,17 @@ for (i in 1:nrow(metaData)){
     
   }
   
-
+  # If any NA genes, remove
   data_i_raw = data_i_raw[!is.na(rownames(data_i_raw)),]
   
+  # Add MT percent
   data_i_raw[["percent.mt"]] <- PercentageFeatureSet(data_i_raw, pattern = "^MT-")
   data_i_raw = data_i_raw[,!is.na(data_i_raw$percent.mt)]
   max(data_i_raw$percent.mt)
   folder = paste0(output_folder,sample_name,'/')
   dir.create(folder,recursive = T)
   
+  # Prefiltered QC plots
   pathName <- paste0(folder, '/QC_PreFilter.png')
   png(file=pathName,width=500, height=500)
   plot = VlnPlot(data_i_raw, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"),
@@ -127,10 +119,12 @@ for (i in 1:nrow(metaData)){
   #data_i_filtered[["percent.mt"]] <- PercentageFeatureSet(data_i_filtered, pattern = "^MT-")
   
   
+  
   percent_MT_list = data_i_filtered$percent.mt
+  # If min sum of counts per cell is less than 200, proceed normally
+  # Else skip soupx (Happens only if sample has already been filtered)
   if (countSum_min <= 200){
   
-    ### Scran norm?
     data_i_filtered_run = NormalizeData(data_i_filtered, normalization.method = "LogNormalize", scale.factor = 10000)
     #data_i_filtered_run = ScranNorm(data_i_filtered)
     data_i_filtered_run = FindVariableFeatures(data_i_filtered_run, selection.method = "vst", nfeatures = 2000)
@@ -166,26 +160,26 @@ for (i in 1:nrow(metaData)){
       
     
       
-      useToEst = estimateNonExpressingCells(sc, nonExpressedGeneList = list(IG = HBGenes))
-      folder = paste0(output_folder,sample_name,'/')
-      dir.create(folder, recursive = T)
-      pathName = paste0(folder,sample_name,'_PreSoup_HBGenes','','.png')
-      png(file=pathName,width=1000, height=1000)
-      print( plotMarkerMap(sc,geneSet=igGenes,useToEst=useToEst))
-      dev.off()
+    useToEst = estimateNonExpressingCells(sc, nonExpressedGeneList = list(IG = HBGenes))
+    folder = paste0(output_folder,sample_name,'/')
+    dir.create(folder, recursive = T)
+    pathName = paste0(folder,sample_name,'_PreSoup_HBGenes','','.png')
+    png(file=pathName,width=1000, height=1000)
+    print( plotMarkerMap(sc,geneSet=igGenes,useToEst=useToEst))
+    dev.off()
       
       
       
-      folder = paste0(output_folder,sample_name,'/')
-      dir.create(folder, recursive = T)
-      
-      print('Plot')
-      folder = paste0(output_folder,sample_name,'/')
-      dir.create(folder, recursive = T)
-      pathName = paste0(folder,sample_name,'_PreSoup_Umap','','.png')
-      png(file=pathName,width=1000, height=1000)
-      print(  DimPlot(data_i_filtered_run,pt.size = 0.5, reduction = "umap",label = FALSE))
-      dev.off()
+    folder = paste0(output_folder,sample_name,'/')
+    dir.create(folder, recursive = T)
+    
+    print('Plot')
+    folder = paste0(output_folder,sample_name,'/')
+    dir.create(folder, recursive = T)
+    pathName = paste0(folder,sample_name,'_PreSoup_Umap','','.png')
+    png(file=pathName,width=1000, height=1000)
+    print(  DimPlot(data_i_filtered_run,pt.size = 0.5, reduction = "umap",label = FALSE))
+    dev.off()
     
     pathName = paste0(folder,sample_name,'_PreSoup_Umap','_percent.mt','.png')
     png(file=pathName,width=1000, height=1000)
@@ -249,6 +243,7 @@ for (i in 1:nrow(metaData)){
   }
 ###################################
  
+  # Plot relevant genes before soup
   gene_list = c('CD3D', 'CD3G', 'CD3E', 'CD8A', 'CD8B', 'IL7R', 'SELL', 'CD14', 'FCGR3A', 'NKG7', 'MS4A1', 'IGKC', 'IGHM', 'CD19', 'MZB1', 'CD34', 'CDK6',
                 'FCER1A','FUT4', 'ELANE', 'MPO', 'HBA2', 'HBB', 'LYZ', 'TNFRSF17')
   
@@ -299,7 +294,6 @@ for (i in 1:nrow(metaData)){
   dev.off()
   
   data_i_filtered_soup_run = NormalizeData(data_i_filtered_soup, normalization.method = "LogNormalize", scale.factor = 10000)
-  #data_i_filtered_run = ScranNorm(data_i_filtered)
   data_i_filtered_soup_run = FindVariableFeatures(data_i_filtered_soup_run, selection.method = "vst", nfeatures = 2000)
   data_i_filtered_soup_run = ScaleData(data_i_filtered_soup_run)
   data_i_filtered_soup_run = RunPCA(data_i_filtered_soup_run,npcs = 30)
@@ -350,6 +344,7 @@ for (i in 1:nrow(metaData)){
   # 
   
   
+  # Plot relevant genes after soup
   
   gene_list = c('CD3D', 'CD3G', 'CD3E', 'CD8A', 'CD8B', 'IL7R', 'SELL', 'CD14', 'FCGR3A', 'NKG7', 'MS4A1', 'IGKC', 'IGHM', 'CD19', 'MZB1', 'CD34', 'CDK6',
                 'FCER1A','FUT4', 'ELANE', 'MPO', 'HBA2', 'HBB', 'LYZ', 'TNFRSF17')
@@ -390,8 +385,8 @@ for (i in 1:nrow(metaData)){
  
   
 }
-
-
+# Done main run
+###############################################################
 # Load Soup + MT
 
 sample_list = c('GL1497BM', 'GL1160BM', 'GL2923BM', 'GL3404BM', 'NBM6CD138N', 'NBM12CD138N', 'GL2185BM', 'GL3417BM', 'GL2653BM')

@@ -1,8 +1,8 @@
 
 data_input = data_run_subset_label
 data_input = data_input[,!(Idents(data_input) %in% 
-                             c('Erythrocyte','23','25','Remove')
-)]
+                             c('Erythrocyte',1:50,'Remove'))]
+
 Idents(data_input) = as.character(Idents(data_input))
 
 

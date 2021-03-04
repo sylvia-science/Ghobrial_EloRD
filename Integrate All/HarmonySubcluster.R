@@ -11,7 +11,6 @@ library(readxl)
 library(harmony)
 library(ggplot2)
 library(SoupX)
-library(sc)
 library(scater)
 library(dplyr)
 library(scran)
@@ -21,7 +20,6 @@ library(edgeR)
 library(SingleCellExperiment)
 library(MAST)
 library(UpSetR)
-library(SingleCellSignalR)
 library(fgsea)
 #data(examplePathways)
 #data(exampleRanks)
@@ -48,30 +46,28 @@ folder_name = 'AllSamples'
 base = '/home/sujwary/Desktop/scRNA/Output/Harmony/'
 harmony_groupby = 'Sample_Kit'
 filename_metaData = '/home/sujwary/Desktop/scRNA/Data/EloRD Meta.xlsx'
-folder_main = paste0(base,folder_name,
+folder_main = paste0(base,
                      '/Batch_',harmony_groupby,'/')
 
 # folder_name = 'AllSamples'
 # #folder_name = 'PBMC'
 # base = '/home/sujwary/Desktop/scRNA/Output/Harmony/'
 
-# sample_type = 'Harmony_AllSamples_PBMC_NPBMC_Sample_Kit'
-# folder_name = 'AllSamples_PBMC'
-# harmony_groupby = 'Sample_Kit'
-# base = '/disk2/Projects/EloRD/Output/Harmony/'
-# folder_main = paste0(base,folder_name,
-#                      '/Batch_',harmony_groupby,'/')
+# EloRD + PBMC
+sample_type = 'Harmony_AllSamples_PBMC_NPBMC_Sample_Kit'
+folder_name = 'AllSamples_PBMC'
+harmony_groupby = 'Sample_Kit'
+base = '/disk2/Projects/EloRD/Output/Harmony/'
+folder_main = paste0(base,folder_name,
+                     '/Batch_',harmony_groupby,'/')
 
-# sample_type = 'AllSamples_PBMC_NPBMC_HCL_Sample_kit_tech'
-# folder_name = 'AllSamples_PBMC_NPBMC_HCL'
-# harmony_groupby = '_Sample_kit_tech'
-# base = '/disk2/Projects/EloRD/Output/Harmony/'
+
 
 # sample_type = 'AllSamples_PBMC_NPBMC_HCL_Sample_kit'
 # folder_name = 'AllSamples_PBMC_NPBMC_HCL'
 # harmony_groupby = '_Sample_kit'
 # base = '/disk2/Projects/EloRD/Output/Harmony/'
-
+# 
 sample_type = 'EloRD_Nivo_Oksana_Sample_kit'
 folder_name = 'EloRD_Nivo_Oksana'
 harmony_groupby = 'Sample_kit'
@@ -80,7 +76,9 @@ filename_metaData = '/disk2/Projects/EloRD_Nivo_Oksana/MetaData/10X Sequenced Sa
 folder_main = paste0(base,
                      '/Batch_',harmony_groupby,'/')
 
-###
+#####################################
+## Set cell type to be subsetted
+#####################################
 celltype = 'T Cell'
 cell_list = c('T-cell','CD8+ T-cell')
 
@@ -91,23 +89,23 @@ cell_list = c('T-cell','CD8+ T-cell')
 # celltype = 'CD8T_Cell'
 # cell_list = c('CD8+ T-cell')
 
-# # # # 
-# celltype = 'Mono_DC'
-# cell_list = c('CD14+ Mono','CD16+ Mono','DC')
+# # # # # 
+celltype = 'Mono_DC'
+cell_list = c('CD14+ Mono','CD16+ Mono','DC')
 # # # #
-# # # celltype = 'NK_Remove_Nfeature2000'
-# # # cell_list = c('NK')
-# # # resolution_val_subset = 1.2
-# # # 
+# # # # # celltype = 'NK_Remove_Nfeature2000'
+# # # # # cell_list = c('NK')
+# # # # # resolution_val_subset = 1.2
+# # # # # 
 # celltype = 'NK_RemoveRiboFeatures'
 # cell_list = c('NK')
 # resolution_val_subset = 3
-
-
 # 
+# 
+# # 
 # celltype = 'NK'
 # cell_list = c('NK')
-# # # # 
+# # # # # # 
 # celltype = 'B_Cell'
 # cell_list = c('B-cell','Pro B-cell','Pre B-cell','Plasma Cell')
 # resolution_val_subset = 3
@@ -127,10 +125,9 @@ sampleParam <- read_excel(filename_sampleParam)
 filename = paste0('/home/sujwary/Desktop/scRNA/Param/','Cluster_ID_testNorm.xlsx')
 cluster_id_param = read_excel(filename)
 
-#filename_metaData = '/home/sujwary/Desktop/scRNA/Data/EloRD Meta.xlsx'
+# Load metadata
 metaData = read_excel(filename_metaData)
 metaData = metaData[metaData$Run== 1,]
-#metaData = metaData[metaData$Technology != 'Microwell',]
 metaData = metaData[rowSums(is.na(metaData)) != ncol(metaData), ]
 
 metaData = metaData[metaData$Sample !='BatchF',] # BatchF is crashing at quickCluster in scran norm
@@ -142,15 +139,11 @@ names(metaData) = gsub(".x","",names(metaData),fixed = TRUE)
 
 sampleParam = sampleParam[sampleParam$Sample %in% metaData$Sample,]
 
+# Parameters for integrated data
 filename_sampleParam <- paste0('/home/sujwary/Desktop/scRNA/Data/sample_','Combine','_parameters.xlsx')
 sampleParam_combine <- read_excel(filename_sampleParam)
 
-#downsample = read.csv('/home/sujwary/Desktop/scRNA/Output/CompareIntegration/DownSampleCells.csv')
-downsample  = NA #downsample$x
-
-
-
-
+# Get params for both main run and subclustering
 PCA_dim = sampleParam_combine$PCA_dim[sampleParam_combine['Sample'] == sample_type]
 resolution_val = sampleParam_combine$resolution_val[sampleParam_combine['Sample'] == sample_type]
 cluster_IDs = sampleParam_combine$Cluster_IDs[sampleParam_combine['Sample'] == sample_type] 
@@ -161,21 +154,9 @@ PCA_dim_subset = sampleParam_combine$PCA_dim[sampleParam_combine['Sample'] == pa
 harmony_dim_subset = sampleParam_combine$harmony_dim[sampleParam_combine['Sample'] == paste0(sample_type,'_',celltype)]
 
 
-#resolution_val_subset = 1.2
-#PCA_dim_subset = 20
-#harmony_dim_subset = 20
-
-#patient_list = c(12, 16, 20)
 
 i = 1
 
-filename_testIntRun= '/home/sujwary/Desktop/scRNA/Param/TestIntegrationRuns.xlsx'
-Samples_runs = read_excel(filename_testIntRun)
-
-#folder = 'Intra-v3_1'
-#folder = 'Inter-version'
-
-sample_list = metaData$Sample
 
 
 dir.create(folder_main,recursive = T)
@@ -195,6 +176,10 @@ cell_features = cell_features[cell_features$Plot_marker == 1,]
 filepath_cluster = paste0( folder_subcluster, 'Cluster/', 'PCA',PCA_dim_subset,'/res',resolution_val_subset,'/' )
 
 if (run){
+  ################################
+  # Integrate data with Harmony
+  ################################
+  # Load original data
   path = paste0(folder_main,'data_run','.Robj')
   data_orig = loadRData(path)
   tmp = data_orig@meta.data[paste0('RNA_snn_res.', resolution_val)]
@@ -202,15 +187,11 @@ if (run){
   tmp  =factor(tmp,levels = as.character(0:(length(unique(tmp))-1)))
   Idents(data_orig) = tmp
   
-  data_orig =label_cells(data_orig,cluster_IDs)
+  # Subset to cell types in cell_list
+  data_orig = label_cells(data_orig,cluster_IDs)
   data_orig = data_orig[,Idents(data_orig) %in% cell_list]
 
-  path = '/home/sujwary/Desktop/scRNA/Output/Harmony/AllSamples/Batch_Sample_Kit//Subcluster/NK/Cluster/PCA30/res3//Data/cellsIdents.csv'
-  old_cells = read.csv(path)
-  remove_list = c(0, 8, 11, 17, 18, 19, 21, 22)
-  #remove_list = c( 8, 11, 17, 18, 19, 21, 22)
-  remove_list = c()
-  
+  #remove_list = c()
   #remove_cells = old_cells[(old_cells$Ident %in% remove_list),]
   #data_orig = data_orig[, !(as.character(data_orig$cell_sample)  %in% remove_cells$cell_sample)]
   
@@ -225,7 +206,7 @@ if (run){
   data_merge_subset =  data_orig
   
   data_merge_subset = addMetaData(data_merge_subset, metaData)
-  data_merge_subset = load_emptyDrops(data_merge_subset,base = '/disk2/Projects/EloRD_Nivo_Oksana/Output/EmptyCells/')
+  data_merge_subset = load_emptyDrops(data_merge_subset,base = '/disk2/Data/EmptyCells/')
   data_merge_subset = load_Doublets(data_merge_subset,base)
   #data_merge_subset = load_CellLabel(data_merge_subset)
   data_merge_subset$origIdent = Idents(data_orig)
@@ -256,7 +237,7 @@ if (run){
   
   path = paste0(folder_subcluster,'data_merge_run','.Robj')
   save(data_run_subset,file= path)
-  data_run_subset  = loadRData(path)
+  #data_run_subset  = loadRData(path)
   data_run_subset$split_var = ''
   groupBy_list = c('sample','Diagnosis','kit',
                    'Treatment','Batch','LowCount',
@@ -279,9 +260,6 @@ if (run){
   data_run_subset = RunHarmony(data_run_subset,group.by.vars =  c("sample", "kit"),
                                dims.use = 1:harmony_dim_subset)
   
-  #data_run_subset = RunHarmony(data_run_subset,group.by.vars =  c("sample", "10X kit"),
-  #                            dims.use = 1:harmony_dim_subset)
-  
   reduction = 'harmony'
   visualize_PCA(data_run_subset,folder_subcluster,harmony_dim_subset,reduction)
 
@@ -300,7 +278,9 @@ if (run){
   save(data_run_subset,file= path)
   ###########################
 }else{
-  
+  #######################
+  # Load processed data
+  #######################
   folder_subcluster = paste0(folder_main, 'Subcluster/',celltype,'/')
   filepath_cluster = paste0( folder_subcluster, 'Cluster/', 'PCA',PCA_dim_subset,'/res',resolution_val_subset,'/' )
   
@@ -332,17 +312,18 @@ if (run){
   #path = "/home/sujwary/Desktop/scRNA/Output/Harmony/AllSamples/Batch_Sample_Kit//Subcluster/Mono_DC/Cluster/PCA30/res1.6//Data/labels.csv"
   #data_run_subset = addOldLabels(path,data_run_subset, 'OldMonoLabels')
   
-  path = '/disk2/Projects/EloRD_Nivo_Oksana/Harmony/Batch_Sample_kit_old/Subcluster/T Cell/Cluster/PCA30/res4/Data/labels.csv'
+  path = '/disk2/Projects/EloRD_Nivo_Oksana/Harmony/Batch_Sample_kit_old_02-24-2021/Subcluster/T Cell/Cluster/PCA30/res3/Data/labels.csv'
   data_run_subset = addOldLabels(path,data_run_subset, 'OldTcellLabels')
   
-  path = '/disk2/Projects/EloRD_Nivo_Oksana/Harmony/Batch_Sample_kit_old/Subcluster/NK/Cluster/PCA30/res3/Data/labels.csv'
+  path = '/disk2/Projects/EloRD_Nivo_Oksana/Harmony/Batch_Sample_kit_old_02-24-2021/Subcluster/NK/Cluster/PCA30/res3.5/Data/labels.csv'
   data_run_subset = addOldLabels(path,data_run_subset, 'OldNKLabels')
   
-  path = '/disk2/Projects/EloRD_Nivo_Oksana/Harmony/Batch_Sample_kit_old/Subcluster/Mono_DC/Cluster/PCA30/res2/Data/labels.csv'
+  path = '/disk2/Projects/EloRD_Nivo_Oksana/Harmony/Batch_Sample_kit_old_02-24-2021/Subcluster/Mono_DC/Cluster/PCA30/res2/Data/labels.csv'
   data_run_subset = addOldLabels(path,data_run_subset, 'OldMonoLabels')
   
 
-
+  
+  
 
   ##
  
@@ -366,6 +347,7 @@ if (run){
   write.csv(all_cells, file = paste0(path,'labels','.csv'), quote=FALSE, row.names= F)
   
 }
+data_harmony_run$sample_cell
 
 gene_name_vector= rownames(data_run_subset)
 gene_name_vector[grep("HLA-DR", gene_name_vector)]
@@ -398,6 +380,7 @@ data_run_subset$FeatureLessThan400 = data_run_subset$nFeature_RNA < 400
 
 ##################
 data_run_subset_label =label_cells(data_run_subset,cluster_IDs_subset)
+
 if (celltype == 'NK' & sample_type == 'EloRD_Nivo_Oksana_Sample_kit'){
   #Ident_list =as.character( Idents(data_run_subset_label))
   #Ident_list[Ident_list == 'IFN+ NK' & data_run_subset_label@reductions[["umap"]]@cell.embeddings[,2] < 1] = 'GZMK+ aNK'
@@ -426,6 +409,7 @@ print(plot)
 
 plot = DimPlot(data_run_subset_label,pt.size = 0.7, reduction = "umap",label = TRUE,label.size = 3)
 print(plot)
+
 
 
 
@@ -470,8 +454,8 @@ filepath_cluster = paste0( folder_subcluster, 'Cluster/', 'PCA',PCA_dim_subset,'
 plotAll(data_run_subset, folder = folder_subcluster,
         sample_name,sampleParam = NA,
         cell_features = cell_features,
-        label_TF = F,integrate_TF = F,  DE_perm_TF = T, 
-        clusterTF =F, markersTF = F, 
+        label_TF = F,  DE_perm_TF = F, 
+        markersTF = F, 
         groupBy = groupBy_list, splitBy = splitBy_list,featurePlot_list = featurePlot_list,
         PCA_dim = PCA_dim_subset,resolution_val = resolution_val_subset,
         pt.size = 2)
@@ -482,8 +466,8 @@ plotAll(data_run_subset, folder = folder_subcluster,
 plotAll(data_run_subset_label, folder = folder_subcluster,
         sample_name,sampleParam = NA,
         cell_features = cell_features,
-        label_TF = F,integrate_TF = F,  DE_perm_TF = F, 
-        clusterTF = F, markersTF = T,  
+        label_TF = F,  DE_perm_TF = F, 
+        markersTF = T,  
         groupBy = groupBy_list, splitBy = splitBy_list,
         PCA_dim = PCA_dim_subset,resolution_val = resolution_val_subset, 
         pt.size = 2,
@@ -493,7 +477,7 @@ plotAll(data_run_subset_label_remove, folder = folder_subcluster,
         sample_name,sampleParam = NA,
         cell_features = cell_features,
         label_TF = F,integrate_TF = F,  DE_perm_TF = F, 
-        clusterTF = F, markersTF = T  ,
+        clusterTF = F, markersTF = F  ,
         groupBy = groupBy_list, splitBy = splitBy_list,
         PCA_dim = PCA_dim_subset,resolution_val = resolution_val_subset, 
         pt.size = 2,
@@ -702,8 +686,9 @@ for (cluster in cluster_list){
   
 }
 
-
+##########################
 ### Plot DE permutations
+##########################
 data_input = data_run_subset_label
 data_input = data_run_subset
 cluster_list1 = sort(unique(Idents(data_input)))
@@ -711,8 +696,8 @@ cluster_list2 = cluster_list1
 
 cluster_list1 = 1
 cluster_list2 = 0:35
-cluster_list1 = 12
-cluster_list2 = c(19)
+cluster_list1 = 14
+cluster_list2 = c(0)
 
 cluster1 = 27
 cluster2 = 24
@@ -896,7 +881,9 @@ write.csv(TcellMono_cells, file = paste0(filepath_cluster,'/Stats/','TcellMono_c
 cell_list = c("Naive CD8+ T-cell","cTreg" ,"GZMH+ GZMB+ CD8+ T-cell","CD8+ TCM",
               "GZMK+ CCL3+ CCL4+ CD8+ T-cell", "IFN+ CD4+ T-cell" ,
 "TSCM"    ,"Naive CD4+ T-cell"  ,"eTreg"  , "CD4+ TCM" ,"Th2",  "TEMRA" ,                   
-"GZMK+ CD8+ T-cell" ,"Stim Naive CD4+ T-cell" , "CCL5+ CD4+ T-cell"  ,"aTh17" , "Th17","TRM")                
+"GZMK+ CD8+ T-cell" ,"Stim Naive CD4+ T-cell" , "CCL5+ CD4+ T-cell"  ,"aTh17" , "Th17","TRM")   
+
+
 celltype = 'TCell_subset'
 
 cell_list = c("cDC2" ,                     "sDC"   ,                  
@@ -919,6 +906,7 @@ cell_list[!(cell_list %in% unique(Idents(data_run_subset_label)))]
 unique(Idents(data_run_subset_label))[!(unique(Idents(data_run_subset_label)) %in%cell_list )]
 
 data_input = data_run_subset_label[,Idents(data_run_subset_label) %in% cell_list]
+#data_input = data_run_subset_label
 plot = DimPlot(data_input,pt.size = 0.7, reduction = "umap",label = TRUE,label.size = 8)
 print(plot)
 
@@ -934,7 +922,7 @@ path = paste0(filepath_cluster,'Data/matrix_',
 write.table(data_matrix_var, 
             file=path, 
             quote=FALSE, sep='\t')
-
+##
 data_input = data_run_subset
 data_matrix = data_input@assays[["RNA"]]@data
 data_matrix_var = data_matrix[rownames(data_matrix) %in% data_input@assays[["RNA"]]@var.features,]
@@ -968,11 +956,11 @@ output$Patient = data_run_subset$Patient
 output$Diagnosis = data_run_subset$Diagnosis
 output$Study = data_run_subset$Study
 output$Treatment = data_run_subset$Treatment
-output$Response = data_run_subset$Response 
+output$Response = data_run_subset$Best_Overall_Response 
 #output = output[,c('sample')]
 #output = data_run_subset_label@meta.data
 dir.create(paste0(filepath_cluster,'Data/'))
-path = paste0(filepath_cluster,'Data/data.csv')
+path = paste0(filepath_cluster,'Data/data_',celltype,'.csv')
 write.csv(output, file = path,row.names=TRUE,col.names=TRUE)
 
 

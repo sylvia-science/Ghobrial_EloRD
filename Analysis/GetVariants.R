@@ -65,13 +65,20 @@ for (i in 1:length(sample_list)){
   #barcode_harmony <-gsub("_.*","",barcode_harmony)
   
   filename = paste("/home/sujwary/Desktop/scRNA/Data/",sample,"_raw_feature_bc_matrix.h5",sep = "")
-  data_sample = Read10X_h5(filename, use.names = TRUE, unique.features = TRUE)
-  barcode = colnames(data_sample)
+  #data_sample = Read10X_h5(filename, use.names = TRUE, unique.features = TRUE)
+  #barcode = colnames(data_sample)
   #barcode = unique(c(barcode,barcode_harmony))
   print(filename)
-  file = paste0(base, sample,'_out_cell_barcodes.csv')
-  write.table(barcode,file, sep = ',', row.names = F, col.names = F, quote = F)
+  #file = paste0(base, sample,'_out_cell_barcodes.csv')
+  #write.table(barcode,file, sep = ',', row.names = F, col.names = F, quote = F)
 
+  data_label_subset = data_label[,data_label$sample == sample]
+  barcode_filter = sub("_.*", "", colnames(data_label_subset))
+  
+  file = paste0(base, sample,'_out_cell_barcodes_filter.csv')
+  write.table(barcode_filter,file, sep = ',', row.names = F, col.names = F, quote = F)
+  
+  
 }
 ###################################
 ## Load files and save maf data

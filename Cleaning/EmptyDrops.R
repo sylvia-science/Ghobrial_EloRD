@@ -8,6 +8,7 @@ library(SoupX)
 source('/home/sujwary/Desktop/scRNA/Code/Plot_func.R')
 source('/home/sujwary/Desktop/scRNA/Code/Functions.R')
 
+# Run EmptyDrops on individual samples
 
 filename_metaData = '/home/sujwary/Desktop/scRNA/Data/EloRD Meta.xlsx'
 filename_metaData = '/disk2/Projects/EloRD_Nivo_PBMC/MetaData/metaData_EloRD_Nivo_PBMC.xlsx'
@@ -16,24 +17,25 @@ data_folder = '/disk2/Projects/EloRD_Nivo_Oksana/Data/'
 output_folder = '/disk2/Projects/EloRD_Nivo_Oksana/Output/EmptyCells/'
 filename_metaData = '/disk2/Projects/EloRD_Nivo_Oksana/MetaData/10X Sequenced Samples.xlsx'
 
-data_folder = '/disk2/Projects/MMRF/Data/'
-output_folder = '/disk2/Projects/MMRF/Output/EmptyCells/'
+data_folder = '/disk2/Projects/EloRD_Nivo_Oksana/Data/'
+output_folder = '/disk2/Data/EmptyCells/'
 filename_metaData = '/disk2/Projects/MMRF/MetaData/MetaData.csv'
 
 
 metaData = read_excel(filename_metaData)
 metaData = metaData[metaData$Run== 1,]
+
 #metaData = metaData[metaData$`Sample Type` == 'PBMC',]
 #metaData = metaData[rowSums(is.na(metaData)) != ncol(metaData), ]
 #metaData = metaData[metaData$`10X kit` == 'Microwell-seq',]
 #metaData = metaData[metaData$Study == 'Nivo',]
 
-sample_name = 'MMRF20A'
-filename_sampleParam <- paste0('/home/sujwary/Desktop/scRNA/Data/sample_parameters.xlsx')
-sampleParam <- read_excel(filename_sampleParam)
+sample_name = 'GL2923BM'
+#filename_sampleParam <- paste0('/home/sujwary/Desktop/scRNA/Data/sample_parameters.xlsx')
+#sampleParam <- read_excel(filename_sampleParam)
 i = 29
 
-for (i in 2:nrow(metaData) ){
+for (i in 1:nrow(metaData) ){
 
   sample_name = metaData$Sample[i]
   print(sample_name)
@@ -47,6 +49,7 @@ for (i in 2:nrow(metaData) ){
   
   HCL_list = c('Adult-Bone-Marrow1','Adult-Bone-Marrow2',
                'Adult-Peripheral-Blood1','Adult-Peripheral-Blood2','Adult-Peripheral-Blood3','Adult-Peripheral-Blood4')
+  # Files from the HCL need to be read in differently
   if (sample_name %in% HCL_list){
     filename = paste("/home/sujwary/Desktop/scRNA/Data/",sample_name,"_dge.txt",sep = "")
     
@@ -77,11 +80,13 @@ for (i in 2:nrow(metaData) ){
     mincount = 200
     
   }
+  
   countSum_min = min(colSum_list)
   #next
   keep = colSum_list >=mincount
   data_i_filtered = data_i_raw[,keep]
   
+  # If data was already filtered,just says all are real cells
   if (countSum_min > 400){
     rownames = colnames(data_i_filtered)
     br_e = data.frame(rownames)
@@ -94,7 +99,7 @@ for (i in 2:nrow(metaData) ){
     dir.create(folder, recursive =T)
     write.csv(br_e, file = paste0(folder,'emptyDrops','.csv'),row.names = FALSE)
     
-    print('Min countsum is larger than 400')
+    print('Min count sum is larger than 400')
     next
   }
 
@@ -124,6 +129,9 @@ for (i in 2:nrow(metaData) ){
   write.csv(br_e, file = paste0(folder,'emptyDrops','.csv'),row.names = FALSE)
   
   next
+  #######################################################
+  ## Run pipeline before and after removing empty cells
+  #######################################################
   data_i_filtered$emptyProb = br_e_sorted$LogProb
   data_i_filtered$is_cell = br_e_sorted$is_cell
   data_i_filtered[["percent.mt"]] <- PercentageFeatureSet(data_i_filtered, pattern = "^MT-")
@@ -273,7 +281,8 @@ for (i in 2:nrow(metaData) ){
   
 }
 
-################################################3
+# End main run
+################################################
 ## Apply emptyDrops to Soup corrected
 
 
