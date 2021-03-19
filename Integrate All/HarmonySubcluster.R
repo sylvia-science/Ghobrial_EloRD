@@ -1,8 +1,4 @@
-# merge the samples
-
-# select highly variable genes
-
-# run PCA 
+# Subclustering run
 
 library(Matrix)
 library(readxl)
@@ -21,11 +17,9 @@ library(SingleCellExperiment)
 library(MAST)
 library(UpSetR)
 library(fgsea)
-#data(examplePathways)
-#data(exampleRanks)
 
 
-
+# Load custom functions
 source('/home/sujwary/Desktop/scRNA/Code/Functions.R')
 source('/home/sujwary/Desktop/scRNA/Code/Integration/FunctionsIntegrate.R')
 source('/home/sujwary/Desktop/scRNA/Code/LoadCellData.R')
@@ -34,24 +28,20 @@ source('/home/sujwary/Desktop/scRNA/Code/Plot_func.R')
 source('/home/sujwary/Desktop/scRNA/Code/Integrate All/Entropy.R')
 source('~/Desktop/scRNA/Code/Analysis/DE_Methods.R')
 
+# If using new metadat file, load old one and merge with new
 filename_metaData = '/disk2/Projects/EloRD_Nivo_PBMC/MetaData/metaData_EloRD_Nivo_PBMC.xlsx'
 metaData_old = read_excel(filename_metaData)
 metaData_old = metaData_old[metaData_old$Run== 1,]
 
 
-## Main run
+## Main run with only EloRD samples
 sample_type = 'Harmony_AllSamples_Sample_Kit'
-#sample_type = 'Harmony_PBMC_Sample_Kit'
 folder_name = 'AllSamples'
 base = '/home/sujwary/Desktop/scRNA/Output/Harmony/'
 harmony_groupby = 'Sample_Kit'
 filename_metaData = '/home/sujwary/Desktop/scRNA/Data/EloRD Meta.xlsx'
 folder_main = paste0(base,
                      '/Batch_',harmony_groupby,'/')
-
-# folder_name = 'AllSamples'
-# #folder_name = 'PBMC'
-# base = '/home/sujwary/Desktop/scRNA/Output/Harmony/'
 
 # EloRD + PBMC
 sample_type = 'Harmony_AllSamples_PBMC_NPBMC_Sample_Kit'
@@ -76,23 +66,40 @@ filename_metaData = '/disk2/Projects/EloRD_Nivo_Oksana/MetaData/10X Sequenced Sa
 folder_main = paste0(base,
                      '/Batch_',harmony_groupby,'/')
 
+# EloRD data + Nivo + Oksana data + PBMC - post treatment nivo
+folder_name = 'EloRD_Nivo_Oksana_PBMC'
+harmony_groupby = 'Sample'
+sample_type = 'EloRD_Nivo_Oksana_PBMC_Sample'
+base = '/disk2/Projects/EloRD_Nivo_Oksana_PBMC/Harmony/'
+filename_metaData = '/disk2/Projects/EloRD_Nivo_Oksana_PBMC/MetaData/MetaData.csv'
+soup_base = '/disk2/Projects/EloRD_Nivo_Oksana/Output/Soup_MT_C100/'
+folder_main = paste0(base,
+                     '/Batch_',harmony_groupby,'/')
+
+# EloRD data + Nivo + Oksana data + PBMC -NPBMC - post treatment nivo
+
+folder_name = 'EloRD_Nivo_Oksana_PBMC_noNPBMC'
+harmony_groupby = 'Sample_kit'
+sample_type = 'EloRD_Nivo_Oksana_PBMC_Sample_noNPBMC'
+base = '/disk2/Projects/EloRD_Nivo_Oksana_PBMC_noNPBMC/Harmony/'
+filename_metaData = '/disk2/Projects/EloRD_Nivo_Oksana_PBMC_noNPBMC/MetaData/MetaData.csv'
+soup_base = '/disk2/Projects/EloRD_Nivo_Oksana/Output/Soup_MT_C100/'
+folder_main = paste0(base,
+                     '/Batch_',harmony_groupby,'/')
+
 #####################################
 ## Set cell type to be subsetted
 #####################################
 celltype = 'T Cell'
 cell_list = c('T-cell','CD8+ T-cell')
 
-# celltype = 'CD4T_Cell'
-# cell_list = c('T-cell')
-
-
-# celltype = 'CD8T_Cell'
-# cell_list = c('CD8+ T-cell')
+# celltype = 'CD8TCell'
+# cell_list = c('T-cell','CD8+ T-cell')
 
 # # # # # 
-celltype = 'Mono_DC'
-cell_list = c('CD14+ Mono','CD16+ Mono','DC')
-# # # #
+# celltype = 'Mono_DC'
+# cell_list = c('CD14+ Mono','CD16+ Mono','DC')
+# # # # # #
 # # # # # celltype = 'NK_Remove_Nfeature2000'
 # # # # # cell_list = c('NK')
 # # # # # resolution_val_subset = 1.2
@@ -102,31 +109,28 @@ cell_list = c('CD14+ Mono','CD16+ Mono','DC')
 # resolution_val_subset = 3
 # 
 # 
-# # 
+# # # 
 # celltype = 'NK'
 # cell_list = c('NK')
-# # # # # # 
-# celltype = 'B_Cell'
-# cell_list = c('B-cell','Pro B-cell','Pre B-cell','Plasma Cell')
-# resolution_val_subset = 3
-
-# celltype = 'Stem_Cell'
-# cell_list = c('HSC','CMPC', 'GMPC','MDPC','42')
-# resolution_val_subset = 3
-
-
-# celltype = 'Remove_cluster'
-# cell_list = c('Remove','9')
-# resolution_val_subset = 3
+# # # # # # # 
+# # celltype = 'B_Cell'
+# # cell_list = c('B-cell','Pro B-cell','Pre B-cell','Plasma Cell')
+# # resolution_val_subset = 3
+# 
+# celltype = 'Stem_Cell_B_Cell_RegressCellCycle'
+# cell_list = c('HSC','CMPC', 'GMPC','MDPC','Pre B-cell','Pro B-cell','B-cell','Plasma Cell')
+# 
+# 
+# celltype = 'T_NK_Mono'
 
 
-filename_sampleParam = paste0('/home/sujwary/Desktop/scRNA/Param/','sample_parameters_Scran.xlsx')
-sampleParam <- read_excel(filename_sampleParam)
-filename = paste0('/home/sujwary/Desktop/scRNA/Param/','Cluster_ID_testNorm.xlsx')
-cluster_id_param = read_excel(filename)
+#filename_sampleParam = paste0('/home/sujwary/Desktop/scRNA/Param/','sample_parameters_Scran.xlsx')
+#sampleParam <- read_excel(filename_sampleParam)
+#filename = paste0('/home/sujwary/Desktop/scRNA/Param/','Cluster_ID_testNorm.xlsx')
+#cluster_id_param = read_excel(filename)
 
 # Load metadata
-metaData = read_excel(filename_metaData)
+metaData = read.csv(filename_metaData)
 metaData = metaData[metaData$Run== 1,]
 metaData = metaData[rowSums(is.na(metaData)) != ncol(metaData), ]
 
@@ -152,6 +156,9 @@ resolution_val_subset = sampleParam_combine$resolution_val[sampleParam_combine['
 PCA_dim_subset = sampleParam_combine$PCA_dim[sampleParam_combine['Sample'] == paste0(sample_type,'_',celltype)]
 
 harmony_dim_subset = sampleParam_combine$harmony_dim[sampleParam_combine['Sample'] == paste0(sample_type,'_',celltype)]
+
+s.genes <- cc.genes$s.genes
+g2m.genes <- cc.genes$g2m.genes
 
 
 
@@ -192,9 +199,12 @@ if (run){
   data_orig = data_orig[,Idents(data_orig) %in% cell_list]
 
   #remove_list = c()
-  #remove_cells = old_cells[(old_cells$Ident %in% remove_list),]
-  #data_orig = data_orig[, !(as.character(data_orig$cell_sample)  %in% remove_cells$cell_sample)]
+  #remove_cells = read.csv('/disk2/Projects/EloRD_Nivo_Oksana_PBMC/Harmony/Batch_Sample/Subcluster/T Cell/Cluster/PCA30/res4_preRemove/Data/Remove_Cells.csv')
   
+  #data_orig = data_orig[, !(as.character(data_orig$sample_cell)  %in% remove_cells$sample_cell)]
+  
+  data_orig = data_orig[, data_orig@assays[["RNA"]]@data['CD8A',] > 0 |
+                          data_orig@assays[["RNA"]]@data['CD8B',] > 0]
   plot = DimPlot(data_orig,pt.size = 0.7, reduction = "umap",label = TRUE,label.size = 8)
   print(plot)
   
@@ -210,20 +220,23 @@ if (run){
   data_merge_subset = load_Doublets(data_merge_subset,base)
   #data_merge_subset = load_CellLabel(data_merge_subset)
   data_merge_subset$origIdent = Idents(data_orig)
-  data_merge_subset$kit = data_merge_subset$`10X kit`
+  data_merge_subset$kit = data_merge_subset$X10X.kit
   data_merge_subset$split_var = ''
   
   data_run_subset = FindVariableFeatures(data_merge_subset, selection.method = "vst", nfeatures = 2000)
   
   
-  # Remove Ribo genes form var genes
+  # Remove Ribo genes from var genes
   var_features = data_run_subset@assays[["RNA"]]@var.features
   sum(grepl("^RP[SL]",var_features))
   sum(grepl("^MT",var_features))
   var_features = var_features[!grepl("^RP[SL]",var_features)]
   data_run_subset@assays[["RNA"]]@var.features  = var_features
   
+  data_run_subset = CellCycleScoring(data_run_subset, s.features = s.genes, g2m.features = g2m.genes, set.ident = TRUE)
+  #data_run_subset = ScaleData(data_run_subset,  vars.to.regress = c("S.Score", "G2M.Score"))
   data_run_subset = ScaleData(data_run_subset)
+  
   PCA_dim_orig = 50
   data_run_subset = RunPCA(data_run_subset,npcs = PCA_dim_orig)
   
@@ -245,19 +258,19 @@ if (run){
   featurePlot_list = c('percent.mt','nCount_RNA','G2M.Score','S.Score')
   splitBy_list = NA
   
-  data = as.data.frame(data_run_subset@assays[["RNA"]]@counts)
-  DR = as.numeric(apply(data,2, function(x) sum(x > 0)/nrow(data)))
-  data_run_subset$DR = DR
+  #data = as.data.frame(data_run_subset@assays[["RNA"]]@counts)
+  #DR = as.numeric(apply(data,2, function(x) sum(x > 0)/nrow(data)))
+  #data_run_subset$DR = DR
   
   plotAll(data_run_subset, folder = paste0(folder_subcluster,'Merge/'),
           sample_name,sampleParam = NA,
           cell_features = cell_features, plot_PCA = F,
-          label_TF = F,integrate_TF = F,  DE_perm_TF = F, 
-          clusterTF =F, markersTF = F,
+          label_TF = F,  DE_perm_TF = F, DE_perm_clusters = NA,
+           markersTF = F,
           groupBy = groupBy_list, splitBy = splitBy_list,featurePlot_list = featurePlot_list,
           PCA_dim = PCA_dim_subset,resolution_val = 1)
   
-  data_run_subset = RunHarmony(data_run_subset,group.by.vars =  c("sample", "kit"),
+  data_run_subset = RunHarmony(data_run_subset,group.by.vars =  c("sample",'kit'),
                                dims.use = 1:harmony_dim_subset)
   
   reduction = 'harmony'
@@ -276,6 +289,8 @@ if (run){
   dir.create(folder_subcluster,recursive = T)
   path = paste0(folder_subcluster,'data_run_PC',harmony_dim_subset,'.Robj')
   save(data_run_subset,file= path)
+  
+  
   ###########################
 }else{
   #######################
@@ -338,6 +353,8 @@ if (run){
   path = paste0(filepath_cluster,'/Data/')
   dir.create(path,recursive = T)
   data_run_subset_label =label_cells(data_run_subset,cluster_IDs_subset)
+  plot = DimPlot(data_run_subset_label,pt.size = 0.7, reduction = "umap",label = TRUE,label.size = 8)
+  print(plot)
   
   all_cells = as.data.frame(colnames(data_run_subset_label))
   colnames(all_cells) = 'cell'
@@ -345,6 +362,23 @@ if (run){
   all_cells$sample_cell = data_run_subset_label$sample_cell
   all_cells$cell_type = Idents(data_run_subset_label)
   write.csv(all_cells, file = paste0(path,'labels','.csv'), quote=FALSE, row.names= F)
+  
+  
+  
+  
+  ##
+  data_run_subset_label =label_cells(data_run_subset,cluster_IDs_subset)
+  
+  data_run_subset_label_remove = data_run_subset_label[,Idents(data_run_subset_label) == 'Remove']
+  plot = DimPlot(data_run_subset_label_remove,pt.size = 0.7, reduction = "umap",label = TRUE,label.size = 8)
+  print(plot)
+  remove_cells = as.data.frame(colnames(data_run_subset_label_remove))
+  colnames(remove_cells) = 'cell'
+  remove_cells$sample = data_run_subset_label_remove$sample
+  remove_cells$sample_cell = data_run_subset_label_remove$sample_cell
+  remove_cells$cell_type = Idents(data_run_subset_label_remove)
+  path = paste0(filepath_cluster,'/Data/')
+  write.csv(remove_cells, file = paste0(path,'Remove_Cells','.csv'), quote=FALSE, row.names= F)
   
 }
 data_harmony_run$sample_cell
@@ -371,15 +405,25 @@ gene_list[(gene_list %in%  data_run_subset_label@assays[["RNA"]]@var.features)]
 filepath_cluster = paste0( folder_subcluster, 'Cluster/', 'PCA',PCA_dim_subset,'/res',resolution_val_subset,'/' )
 
 data_run_subset = addMetaData(data_run_subset, metaData)
-data_run_subset = load_Doublets(data_run_subset)
+#data_run_subset = load_Doublets(data_run_subset)
 #data_run_subset = load_CellLabel(data_run_subset)
 print(unique(data_run_subset$GeneralCellType))
 
-data_run_subset$kit = data_run_subset$`10X kit`
+data_run_subset$kit = data_run_subset$X10X.kit
 data_run_subset$FeatureLessThan400 = data_run_subset$nFeature_RNA < 400
 
 ##################
 data_run_subset_label =label_cells(data_run_subset,cluster_IDs_subset)
+
+if (celltype == 'Stem_Cell_B_Cell' & sample_type == 'EloRD_Nivo_Oksana_PBMC_Sample_noNPBMC'){
+  path  = '/disk2/Projects/EloRD_Nivo_Oksana_PBMC_noNPBMC/Harmony//Batch_Sample_kit/Subcluster/Stem_Cell_B_Cell/Cluster/PCA30/res10//Data/Cluster55labels.csv'
+  cluster55 = read.csv(path)
+  
+  Ident_list =as.character( Idents(data_run_subset_label))
+  Ident_list[data_run_subset_label$sample_cell %in% cluster55$sample_cell] = 'Pro B-cell'
+
+  Idents(data_run_subset_label) = Ident_list
+}
 
 if (celltype == 'NK' & sample_type == 'EloRD_Nivo_Oksana_Sample_kit'){
   #Ident_list =as.character( Idents(data_run_subset_label))
@@ -398,20 +442,14 @@ if(celltype == 'T Cell' & sample_type == 'Harmony_AllSamples_Sample_Kit'){
   
   #remove_list = c('Remove','Pro Erythrocyte')
   #data_run_subset_label = data_run_subset_label[,!(Idents(data_run_subset_label) %in% remove_list)]
+ 
   
 }
 
 ##################
 
 
-plot = DimPlot(data_run_subset,pt.size = 0.7, reduction = "umap",label = TRUE,label.size = 8)
-print(plot)
-
-plot = DimPlot(data_run_subset_label,pt.size = 0.7, reduction = "umap",label = TRUE,label.size = 3)
-print(plot)
-
-
-
+# Remove specific cells from data
 
 unique(Idents(data_run_subset_label))
 remove_list = c('Erythrocyte','DC/T-Cell DBL','Mono/T-Cell DBL','14','MK',
@@ -428,17 +466,19 @@ Idents(data_run_subset_label_remove) = as.character(Idents(data_run_subset_label
 unique(Idents(data_run_subset_label_remove))
 sort(table(Idents(data_run_subset_label_remove)))
 
+# Plot all umaps
+plot = DimPlot(data_run_subset,pt.size = 0.7, reduction = "umap",label = TRUE,label.size = 8)
+print(plot)
+
+plot = DimPlot(data_run_subset_label,pt.size = 0.7, reduction = "umap",label = TRUE,label.size = 3)
+print(plot)
+
 plot = DimPlot(data_run_subset_label_remove,pt.size = 0.7, reduction = "umap",label = TRUE,label.size = 8)
 print(plot)
-# data_run_subset_label$Ident_32_33 = 'other'
-# data_run_subset_label$Ident_32_33[Idents(data_run_subset_label) == '32'] = '32'
-# data_run_subset_label$Ident_32_33[Idents(data_run_subset_label) == '33'] = '33'
-# data_run_subset_label$Ident_32_33 = factor(data_run_subset_label$Ident_32_33, levels = c('other','32','33'))
-# plot = DimPlot(data_run_subset_label,pt.size = 1, reduction = "umap",
-#                label = F,group.by  = 'Ident_32_33')
-# print(plot)
 
-#
+##########################
+#### Make main plots 
+##########################
 groupBy_list = c('sample','Diagnosis','kit','OldCellType',
                  'Treatment','Batch','LowCount',
                  'Doublet','FeatureLessThan400','Sample Type')
@@ -447,26 +487,22 @@ featurePlot_list = c('percent.mt','nCount_RNA','G2M.Score','S.Score')
 splitBy_list = NA
 
 filepath_cluster = paste0( folder_subcluster, 'Cluster/', 'PCA',PCA_dim_subset,'/res',resolution_val_subset,'/' )
-
 #
 
 
 plotAll(data_run_subset, folder = folder_subcluster,
         sample_name,sampleParam = NA,
         cell_features = cell_features,
-        label_TF = F,  DE_perm_TF = F, 
-        markersTF = F, 
+        label_TF = F,  DE_perm_TF = T, DE_perm_clusters = NA,
+        markersTF = T,
         groupBy = groupBy_list, splitBy = splitBy_list,featurePlot_list = featurePlot_list,
         PCA_dim = PCA_dim_subset,resolution_val = resolution_val_subset,
         pt.size = 2)
 
-# data_run_subset_label = data_run_subset_label[,Idents(data_run_subset_label) != 14]
-
-
 plotAll(data_run_subset_label, folder = folder_subcluster,
         sample_name,sampleParam = NA,
         cell_features = cell_features,
-        label_TF = F,  DE_perm_TF = F, 
+        label_TF = F,  DE_perm_TF = F, DE_perm_clusters = NA,
         markersTF = T,  
         groupBy = groupBy_list, splitBy = splitBy_list,
         PCA_dim = PCA_dim_subset,resolution_val = resolution_val_subset, 
@@ -476,14 +512,17 @@ plotAll(data_run_subset_label, folder = folder_subcluster,
 plotAll(data_run_subset_label_remove, folder = folder_subcluster,
         sample_name,sampleParam = NA,
         cell_features = cell_features,
-        label_TF = F,integrate_TF = F,  DE_perm_TF = F, 
-        clusterTF = F, markersTF = F  ,
+        label_TF = F,  DE_perm_TF = F, DE_perm_clusters = NA,
+        markersTF = F  ,
         groupBy = groupBy_list, splitBy = splitBy_list,
         PCA_dim = PCA_dim_subset,resolution_val = resolution_val_subset, 
         pt.size = 2,
         str = '_label_remove')
 
-cell_features_file = paste0('/home/sujwary/Desktop/scRNA','/Data/Cell_IDS.xlsx')
+######################
+## Plot markers
+######################
+cell_features_file = paste0('/home/sujwary/Desktop/scRNA/Data/Cell_IDS.xlsx')
 cell_features = read_excel(cell_features_file)
 cell_features = cell_features[cell_features$Plot_marker == 1,]
 
@@ -498,37 +537,31 @@ PlotKnownMarkers(data_run_subset, folder = paste0(filepath_cluster,'Cell Type/Al
                  prefix_logFC = F, plotAll = T)
 
 
-gene_list = c('AXL','GAS6')
-gene_list = c('KIR2DL1','KIR2DL2','KIR2DL3','KIR2DL4', 'KIR2DL5','KIR2DL5A', 'KIR2DL5B',
-              'KIR2DS1', 'KIR2DS2', 'KIR2DS3', 'KIR2DS4DEL', 
-              'KIR2DS4INS','KIR2DS5', 'KIR3DL1', 'KIR3DL2', 'KIR3DL3','KIR3DS1', 'KIR2DP1', 'KIR3DP1')
-
-
-gene_list = c('TIGIT', 'LAG3', 'HAVCR2', 'B3GAT1', 'TNFSF10', 'PRF1', 'GZMK', 'GZMB', 'GZMH', 'ZBTB16', 'KLRC2')
-gene_list = c('HLA-A', 'HLA-B', 'HLA-C','RELA')
-
 gene_list = 'NKG7,PRF1, GZMB,GNLY, CCL5, FCGR3A, FCER1G,TYROBP,CX3CR1, ADGRG1,KLRD1, KLRF1,ITGAL, ZEB2,SRGN, GZMH, IFI16, RUNX3,IFITM2,IFITM1,GZMK,SELL,XCL1,XCL2,CD44,KLRC1,CD2,NCAM1,NR4A2,FOS,IER2,JUN,FOSL2,MAP3K8,NFKBIA,DUSP1,JUND,IRF1,CD3D,CD3G,GZMH,CD52,TRAC,TRGC2,LMNA,KDM6B,AREG,KDM6B,AREG,TNFAIP3,SLA2,OTULIN,BIRC2,TGFB1,REL,MAP3K8,NR4A2,MAFF,NFKBIA,CXCR4,SAT1,CD3D,CXCR4,AREG,CCL5,AREG,GZMK,XCL1,FOS,CCL3,NFKBIA,XCL2,CCL5, JUNB, FOSB,IER2,CD69,JUN,KLRB1,DUSP1,KLRF1,NR4A2,CCL4,JUNB,CD69,DUSP1,JUND,IER2,NR4A2,DUSP2,GZMK,JUN,JUNB,IER2,NKG7,DUSP1,FOSB,CCL3,CCL5,CFL1,FOS,CD69,KLRG1,KLRD1,KIR3DX1,KIRDL1'
 FeaturePlot_GeneList(data_run_subset,gene_list,
                      folder = paste0(filepath_cluster,'Cell Type/12-10-20/'),
                      FeaturePlotFix = T,str = '', label = F)
 
-remove_list = c('Remove','14','Erythrocyte','DC/T-Cell DBL',
-                'Mono/CD8+ T Cell DBL','Mono/T-Cell DBL','Mono/CD8+ T Cell DBL')
-data_run_subset_label = data_run_subset_label[,!(Idents(data_run_subset_label) %in% remove_list)]
 StackedVlnPlotHelper(data_run_subset_label,gene_list,
                      folder_heatMap = paste0(filepath_cluster,'Plots/Violin/'),
                      filename = paste0('AXL_GAS6_AllCluster.png'))
 
-
+######################
+## Make tables 
+######################
+var = 'OldCellType'
 var = 'OldMonoLabels'
 var = 'OldTcellLabels'
 var = 'OldNKLabels'
 dir.create(paste0(filepath_cluster,'/Data/'), recursive = T)
-cell_table = table( (data_run_subset@meta.data[[var]]),as.character(Idents(data_run_subset) ))
+cell_table = table( data_run_subset@meta.data[[var]],as.character(Idents(data_run_subset) ))
 write.csv(cell_table, file = paste0(filepath_cluster,'/Data/',var,'_Table.csv'))
 #cell_table = table( data_run_subset$Technology,Idents(data_run_subset))
 #write.csv(cell_table, file = paste0(filepath_cluster,'/Data/','TechnologyByIdent_Table.csv'))
 
+
+cell_table = table(Idents(data_run_subset_label))
+write.csv(cell_table, file = paste0(filepath_cluster,'/Data/',celltype,'_Table_NumCellPerLabel.csv'))
 
 cell_table = table( data_run_subset_label@meta.data[[var]],Idents(data_run_subset_label))
 write.csv(cell_table, file = paste0(filepath_cluster,'/Data/','Old',var,'_Table_datalabel.csv'))
@@ -545,7 +578,7 @@ write.csv(cell_table, file = paste0(filepath_cluster,'/Data/','DiagnosisByIdent_
 
 
 ####################
-### Plot DE
+## Plot DE
 ####################
 str = '_label'
 str = ''
@@ -561,7 +594,7 @@ DE = DE[!grepl("MT-", DE$gene),]
 DE = DE[!grepl("^RP[SL]", DE$gene),]
 
 cluster_list = unique(DE$cluster)
-
+cluster_list = 21
 #cluster_list = cluster_list[4:length(cluster_list)]
 for (cluster in cluster_list){
   DE_cluster = DE[DE$cluster == cluster,]
@@ -590,8 +623,9 @@ for (cluster in cluster_list){
   
 }
 ##
-
-## Random plotting
+############################
+##  Plot old labels
+############################
 group = 'OldCellType'
 group = 'OldTcellLabels'
 group = 'OldNKLabels'
@@ -618,9 +652,9 @@ plot = plot + theme(
 print(plot)
 dev.off()
 
-
-### Plot DE
-
+######################
+### Plot DE and save pathways
+######################
 pathways.hallmark <- gmtPathways('/home/sujwary/Desktop/scRNA/Data/GSEA/h.all.v7.2.symbols.gmt')
 pathways.c2 <- gmtPathways('/home/sujwary/Desktop/scRNA/Data/GSEA/c2.all.v7.2.symbols.gmt')
 pathways.c5 <- gmtPathways('/home/sujwary/Desktop/scRNA/Data/GSEA/c5.all.v7.2.symbols.gmt')
@@ -694,10 +728,11 @@ data_input = data_run_subset
 cluster_list1 = sort(unique(Idents(data_input)))
 cluster_list2 = cluster_list1
 
-cluster_list1 = 1
-cluster_list2 = 0:35
-cluster_list1 = 14
-cluster_list2 = c(0)
+
+cluster_list1 = 21
+cluster_list2 = c(5, 6, 19,24)
+cluster_list1 = 9
+cluster_list2 = c(2)
 
 cluster1 = 27
 cluster2 = 24
@@ -744,9 +779,9 @@ for (cluster1 in cluster_list1){
   
   
 }
-
-# Heatmap
-
+####################
+## Heatmap
+####################
 newIdents = as.character(Idents(data_run_subset))
 
 newIdents[newIdents == '8'] = '8_11'
@@ -775,18 +810,12 @@ data_run_subset_remove = data_run_subset[,Idents(data_run_subset) %in% c(2,5,13,
 
 unique(Idents(data_run_subset_remove))
 
-#remove_list = c('MK','14','Mono/T-Cell DBL','Mono/CD8+ T Cell DBL','Erythrocyte','DC/T-Cell DBL',
-                #'12','0','11','17','18','21','T/NK Doublet')
-#data_run_subset_label = data_run_subset_label[,!(Idents(data_run_subset_label) %in% remove_list)]
-
 gene_list = gene_list = c('AXL','GAS6')
 gene_list = c('CX3CR1','CXCR4')
 folder = paste0(filepath_cluster,'/Plots/Heatmap/')
 dir.create(folder,recursive = T)
 pathName <- paste0(folder,paste0('HeatMap', '','.pdf'))
 pdf(file=pathName, height=12, width=20)
-#png(file=pathName)
-#png(file=pathName,width=2000, height=1000,res = 100)
 
 plot = DoHeatmap(data_run_subset_remove, features = gene_list, slot = 'data')
 plot = plot + theme(
@@ -800,9 +829,9 @@ print(plot)
 dev.off()
 
 
-########
-## DE
-########
+##################################
+## DE between specific clusters
+##################################
 
 newIdents = as.character(Idents(data_run_subset))
 newIdents[newIdents == '8'] = '8_11'
@@ -850,8 +879,9 @@ plot = plot + theme(
 print(plot)
 dev.off()
 
-
-# #######################
+########################
+## Plot doublet methods
+########################
 doubletMethod = 'Doublet3Methods'
 mean_doublets = 100*sum((data_run_subset@meta.data[,doubletMethod]))/ncol(data_run_subset)
 title_str = paste0('% Doublets: ',specify_decimal(mean_doublets,2))
@@ -876,8 +906,9 @@ TcellMono_cells = data.frame(cbind(cells,samples))
 TcellMono_cells$cell_sample = data_run_subset$cell_sample[Idents(data_run_subset) %in% c(8,17)]
 write.csv(TcellMono_cells, file = paste0(filepath_cluster,'/Stats/','TcellMono_cells'))
 
-
-# Matrix for NMF
+###########################
+## Matrix for NMF
+###########################
 cell_list = c("Naive CD8+ T-cell","cTreg" ,"GZMH+ GZMB+ CD8+ T-cell","CD8+ TCM",
               "GZMK+ CCL3+ CCL4+ CD8+ T-cell", "IFN+ CD4+ T-cell" ,
 "TSCM"    ,"Naive CD4+ T-cell"  ,"eTreg"  , "CD4+ TCM" ,"Th2",  "TEMRA" ,                   
@@ -938,6 +969,7 @@ write.table(data_matrix_var,
             quote=FALSE, sep='\t')
 
 # UmapCoord and metadata
+data_run_subset_label =label_cells(data_run_subset,cluster_IDs_subset)
 
 sample = as.character(data_run_subset$sample)
 ident = as.character(Idents(data_run_subset))
@@ -1033,3 +1065,7 @@ pfile <- as.loom(data_input, filename = paste0(filepath_cluster,"Data/data.loom"
  
 # Proportion analysis
 
+matrix = read.table('/disk2/Projects/EloRD_Nivo_Oksana_PBMC/Harmony/Batch_Sample/Subcluster/T Cell/Cluster/PCA30/res4/Data/matrix_T Cell.tsv')
+
+nrow(matrix)
+ncol(matrix)

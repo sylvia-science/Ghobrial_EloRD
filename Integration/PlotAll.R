@@ -2,6 +2,7 @@ plotAll = function(data,folder,sample_name,sampleParam,label_TF,
                    cell_features,
                    plot_PCA= F,
                    DE_perm_TF = FALSE, # Do DE between each cluster and each individual cluster
+                   DE_perm_clusters = NA,
                    markersTF = T, # Do DE between each cluster and all other clusters combined.
                    groupBy = NA, # Variables that will be used to make umap plots where the variables are split in the plot
                    splitBy = NA, # Variables to plot split in the umap
@@ -306,9 +307,13 @@ plotAll = function(data,folder,sample_name,sampleParam,label_TF,
     filepath_mvn = paste0( filepath_cluster, 'DE/nVsm/')
     print(filepath_mvn)
     dir.create( filepath_mvn, recursive = TRUE)
-    Features_mvn_df = diffExpPermute(data,cell_features_label)
+    if (!(is.na(DE_perm_clusters))){
+      data_input = data[,Idents(data) %in% DE_perm_clusters]
+    }
+    #browser()
+    Features_mvn_df = diffExpPermute(data_input,cell_features_label)
     
-    level_list = unique(levels(data))
+    level_list = unique(levels(data_input))
     for (level in 1:length(level_list) ){
       ident1 = level_list[level]
       

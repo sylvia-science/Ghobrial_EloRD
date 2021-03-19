@@ -12,7 +12,8 @@ data_input = ScaleData(data_input, features = rownames(data_input))
 #data_input = renameCells(data_input,idents = c('eTreg','cTreg'),newident = 'Treg')
 #data_input = renameCells(data_input,idents = c('CD14+CD16+ Mono'),newident = 'CD16+ Mono')
 
-data_input$Treatment[data_input$Treatment == 'baseline'] = 'Baseline'
+data_input$Treatment.y[data_input$Treatment.y == 'baseline'] = 'Baseline'
+data_input = data_input[, data_input$Study %in% c( 'Elotuzumab Trial', 'NBM','Nivolumab Trial')]
 
 celltype_list = sort(unique(as.character(Idents(data_input))))
 celltype_list
@@ -30,10 +31,10 @@ celltype_list=  c('Naive CD4+ T-cell','Naive CD8+ T-cell','GZMK+ CD8+ T-cell',
                   'Intermediate CD4+ T-cell','CD4+ TCM','B Cell','GZMK+ CCL3+ CCL4+ CD8+ T-cell',
                   'GZMH+ GZMB+ CD8+ T-Cell','Th2','SELL+ CD14+ Mono','CCL5+ CD4+ T-cell','aTh17',
                   'CD16+ Mono','sMono','Cytotoxic NK','Plasma Cell')
-celltype_list = c('Th17')
+celltype_list = c('TGFb1+ CD14+ Mono')
 celltype = celltype_list[1]
 
-celltype = 'NFkB-high'
+#celltype = 'NFkB-high'
 DE_type = 'DESeq2'
 DE_type = 'EdgeR'
 
@@ -42,8 +43,8 @@ DE_type = 'EdgeR'
 for (celltype in celltype_list){
   print(celltype)
   #celltype = 'eTreg'
-  ident1 = paste0('Pre-treatment ',celltype)
-  ident2 = paste0('Post-treatment ',celltype)
+  ident1 = paste0('NBM ',celltype)
+  ident2 = paste0('Pre-treatment ',celltype)
   
   #ident1 = paste0('CD16+ Mono')
   #ident2 = paste0('CD14+ Mono')
@@ -153,8 +154,8 @@ for (celltype in celltype_list){
   write.csv(design_fr,paste0(filepath_cluster, 'DE/','EdgeR/',subfolder,'/','designMatrix'))
   #next
   
-  #int1 = match(ident1,colnames(design_fr) )
-  int2 = match(ident1,colnames(design_fr) )
+  int1 = match(ident1,colnames(design_fr) )
+  int2 = match(ident2,colnames(design_fr) )
   con <- integer(ncol(design_fr))
   #con[int1] <- 1 
   con[int2] <- 1

@@ -5,6 +5,8 @@ library(pals)
 library(nord)
 library(palettetown)
 
+# Plot EloRD_PBMC_noNPBMC Umaps
+
 folder = paste0('/home/sujwary/Desktop/scRNA/Output/Harmony/Batch_Sample_Kit/Cluster/PCA30/res3/Plots/Paper/EloRD_PBMC/')
 
 data_harmony_run_label_remove = data_harmony_run_label_remove[, !(Idents(data_harmony_run_label_remove) == 'T-cell' &
@@ -53,6 +55,7 @@ dev.off()
 
 
 values = colorRampPalette(brewer.pal(11, "Paired"))(num_cluster) # Nice pastel feel
+
 pathName <- paste0(folder,'ClusterUmapAll_PBMC_','Paired',str,'.pdf')
 pdf(file=pathName, width = 8,height = 6)
 
@@ -125,7 +128,7 @@ dev.off()
 ### Monocytes
 #################################
 str = '_nolabel'
-str = '_EloRD_PBMC'
+str = ''
 labelTF = T
 
 Ident_order = c('cDC1','cDC2', 'sDC',

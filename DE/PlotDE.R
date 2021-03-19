@@ -4,6 +4,8 @@ data_input = renameCells(data_input,idents = c('cDC1','cDC2'),newident = 'DC')
 data_input = renameCells(data_input,idents = c('CD14+CD16+ Mono'),newident = 'CD16+ Mono')
 
 data_input$Treatment[data_input$Treatment == 'baseline'] = 'Baseline'
+data_input$Treatment.y[data_input$Treatment.y == 'baseline'] = 'Baseline'
+data_input = data_input[, data_input$Study %in% c( 'Elotuzumab Trial', 'NBM','Nivolumab Trial')]
 
 plot = DimPlot(data_input,pt.size = 0.7, reduction = "umap",label = TRUE,label.size = 8)
 print(plot)
@@ -32,8 +34,8 @@ for (celltype in celltype_list){
 DE_type = 'DESeq2'
 DE_type = 'EdgeR'
 
-time1 = 'Baseline'
-time2 = 'NBM'
+time1 = 'NBM'
+time2 = 'Pre-treatment'
 
 base = paste0(filepath_cluster,'/DE/',DE_type,'/Patient/', time1,' Vs ',time2,'/')
 base = paste0(filepath_cluster,'/DE/',DE_type,'/')
@@ -49,7 +51,7 @@ celltype_list=  c('CD14+ Mono','TRM','Naive CD4+ T-cell','Naive CD8+ T-cell','GZ
                   'CD16+ Mono','sMono','Cytotoxic NK','Plasma Cell')
 
 
-celltype_list=  c('NFkB-high')
+celltype_list = c('TGFb1+ CD14+ Mono')
 celltype = celltype_list[1]
 
 boxplot_TF = F
@@ -71,8 +73,8 @@ for (celltype in celltype_list){
   #DE_input = renameCells(DE_input,idents = c('cDC1','cDC2'),newident = 'DC')
   #DE_input = renameCells(DE_input,idents = c('TIMP1+ CD14+ Mono','SELL+ CD14+ Mono'),
   #                       newident = 'CD14+ Mono')
-  DE_input$Best_Overall_Response[DE_input$Best_Overall_Response == 'MR' ] = 'PR'
-  DE_input$Best_Overall_Response[DE_input$Best_Overall_Response %in% c('VGPR','CR','sCR') ] = 'GR'
+  #DE_input$Best_Overall_Response[DE_input$Best_Overall_Response == 'MR' ] = 'PR'
+  #DE_input$Best_Overall_Response[DE_input$Best_Overall_Response %in% c('VGPR','CR','sCR') ] = 'GR'
   
   #DE_input$DE_ident = paste0(DE_input$Treatment, ' ', 
   #                          DE_input$Best_Overall_Response, ' ', Idents(DE_input))
@@ -83,7 +85,7 @@ for (celltype in celltype_list){
  
   DE_input$DE_ident = factor(as.character(DE_input$DE_ident), levels =c(ident1,ident2))
   
-  path = paste0(base, subfolder,'/')
+  path = paste0(filepath_cluster,'DE/EdgeR/', subfolder,'/')
   filename = paste0(path,'/DE_',DE_type,' ',subfolder,'.csv')
   
   if(!file.exists(filename)){
@@ -100,7 +102,7 @@ for (celltype in celltype_list){
   res = res[res$padj < 0.05,]
   
   
-  path = paste0(base, subfolder,'/')
+  path = paste0(filepath_cluster,'DE/EdgeR/', subfolder,'/')
   filename = paste0(path,'/DE_',DE_type,' ',subfolder,'_clean','.csv')
   
   write.csv(res, file = filename,row.names=TRUE)
@@ -128,7 +130,7 @@ for (celltype in celltype_list){
   fgseaRes <- fgsea(pathways=pathways, stats=ranks, nperm=1000)
   fgseaRes  = fgseaRes[order(fgseaRes$padj, fgseaRes$pval),]
   fgseaRes$leadingEdge =  sapply( fgseaRes$leadingEdge , paste0, collapse=",")
-  path = paste0(base, subfolder,'/')
+  path = paste0(filepath_cluster,'DE/EdgeR/', subfolder,'/')
   filename = paste0(path,'/DE_',DE_type,'_','fgseaRes_',subfolder,'.csv')
   write.csv(fgseaRes, file = filename,row.names=F)
   

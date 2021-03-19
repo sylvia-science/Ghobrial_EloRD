@@ -5,17 +5,26 @@ import pandas as pd
 # RUN SIGNATURE ANALYZER
 # ---------------------
 
-celltype = 'NK_RemoveRiboFeatures'
-celltype = 'TCell_NK_Mono'
+#celltype = 'NK_RemoveRiboFeatures'
+#celltype = 'TCell_NK_Mono'
 #celltype = ''
-path = "/home/sujwary/Desktop/scRNA/Data/NMF/Harmony_AllSamples_Sample_Kit_" + celltype
-input_matrix = pd.read_csv(path + ".tsv", sep='\t')
+#path = "/home/sujwary/Desktop/scRNA/Data/NMF/Harmony_AllSamples_Sample_Kit_" + celltype
+base = '/disk2/Projects/EloRD_Nivo_Oksana_PBMC_noNPBMC/Harmony/Batch_Sample_kit/Subcluster/T Cell/Cluster/PCA30/res3.5/Data/'
+path = base + 'matrix_T Cell_varFeature.tsv'
 
-sa.run_matrix(matrix=input_matrix, outdir= path + '_phi1_alpha10/', nruns=100,
-              verbose=True,plot_results=False,K0=30,
-              tolerance=2e-04,objective='gaussian', max_iter=30000, phi=1.0, a=10.0, 
+base = '/disk2/Projects/EloRD_Nivo_Oksana_PBMC_noNPBMC/Harmony/Batch_Sample_kit/Subcluster/NK/Cluster/PCA30/res2/Data/'
+path = base + 'matrix_NK_varFeature.tsv'
+
+base = '/disk2/Projects/EloRD_Nivo_Oksana_PBMC_noNPBMC/Harmony/Batch_Sample_kit/Subcluster/Mono_DC/Cluster/PCA30/res2/Data/'
+path = base + 'matrix_Mono_DC_varFeature.tsv'
+input_matrix = pd.read_csv(path + "", sep='\t')
+
+sa.run_matrix(matrix=input_matrix, outdir= base + 'phi1_alpha10/', nruns=100,
+              verbose=True,plot_results=False,K0=40,tolerance = 0.0002,
+              objective='gaussian', max_iter=30000, phi=1.0, a=10.0, 
               prior_on_W = 'L2',prior_on_H = 'L2',cuda_int = 0)
- # k = 20 ceiling
+# tolerance=2e-04 
+# k = 20 ceiling
 
 # Priors L2
 

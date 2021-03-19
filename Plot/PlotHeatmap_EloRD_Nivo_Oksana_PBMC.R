@@ -4,9 +4,13 @@ library(tidyr)
 
 #Plot heatmap of NK Cells
 
-celltype = c("Tgd","CD56bright",'CD81+ cCD56dim','aNK',"NFkB-high",'IFN+ NK')
-celltype_factor = c("Tgd","CD56bright NK","CD81+ cCD56dim",'aNK',"NFkB-high NK",'IFN+ NK')
+celltype = c("Tgd","CD56bright",'cCD56dim',
+             'CD81+ cCD56dim','aNK', 'aGZMK+ NK',"NFkB-high",'IFN+ NK')
+celltype_factor = c("Tgd","CD56bright NK",'cCD56dim NK',
+                    "CD81+ cCD56dim NK",'aNK','aGZMK+ NK',"NFkB-high NK",'IFN+ NK')
 celltype[!(celltype %in% unique(Idents(data_run_subset_label)))]
+unique(Idents(data_run_subset_label))[!(unique(Idents(data_run_subset_label)) %in% celltype)]
+
 unique(Idents(data_run_subset_label))
 
 
@@ -19,11 +23,17 @@ Ident_list[Ident_list == "Tgd"] <- "Tgd"
 Ident_list[Ident_list == "cCD56dim"] <- "cCD56dim NK"
 Ident_list[Ident_list== "NFkB-high"] <- "NFkB-high NK"
 Ident_list[Ident_list == "aCCL3+ CD56dim"] <- "aCCL3+ GZMK+ NK"
+Ident_list[Ident_list == "CD81+ cCD56dim"] <- "CD81+ cCD56dim NK"
+
 unique(Ident_list)
 
 mat = as.data.frame(t(data_input@assays[["RNA"]]@counts))
 
-markers <- c("CD3D","CD3G","TRGC1","TRGC2","NCAM1","SELL","CD2","GZMK","GZMB","GZMH","FCGR3A","CX3CR1","PRF1","CCL3","JUN","FOSB",
+markers <- c("CD3D","CD3G","TRGC1","TRGC2", #Tgd
+             "NCAM1","SELL","CD2","GZMK", #CD56 bright
+             "GZMB","GZMH","FCGR3A","CX3CR1","PRF1",#cCD56 dim
+             'CD81', 'CD63', # CD81+ cCD56dim
+             "CCL3","JUN","FOSB",
              "FOS","DUSP1","JUNB","IER2","CXCR4","REL","RELB","NFKB1","NFKB2","BIRC2","AREG","KDM6B","TNFAIP3","NFKBIA","TGFB1",
              'MX1','IFI44L','IFI6','IFI44')
 marker_counts <- mat[,colnames(mat) %in% markers]
@@ -53,13 +63,18 @@ dev.off()
 
 ########################################################################
 # T cells
-celltype = c("Naive CD4+ T-cell","TSCM","CD4+ TCM", 'aCD4+ TCM','aNaive CD4+ T-cell',"IFN+ CD4+ T-cell",
+celltype = c("Naïve CD4+ T-cell","TSCM","CD4+ TCM", 'aCD4+ TCM','aNaïve CD4+ T-cell',"IFN+ CD4+ T-cell",
              "cTreg","eTreg","Th2","TRM","Th17",'Th','CCL5+ CD4+ T-cell',
-             'CD8+ TCM',"Naive CD8+ T-cell","GZMK+ CD8+ T-cell","GZMK+ CCL3+ CCL4+ CD8+ T-cell","GZMB+ GZMH+ CD8+ T-cell","TEMRA",'GZMK+ IL7R+ CD8+ T-cell')
+             'CD8+ TCM',"Naïve CD8+ T-cell","GZMK+ CD8+ T-cell","GZMK+ CCL3+ CCL4+ CD8+ T-cell",
+             "GZMB+ GZMH+ CD8+ T-cell","TEMRA",'GZMK+ IL7R+ CD8+ T-cell')
 
-celltype_factor = c("Naive_CD4_T_cell","TSCM","CD4_TCM", 'aCD4_TCM','aNaive_CD4_T_cell',"IFN_CD4_T_cell",
+celltype_factor = c("Naïve_CD4_T_cell","TSCM","CD4_TCM", 'aCD4_TCM','aNaïve_CD4_T_cell',"IFN_CD4_T_cell",
                     "cTreg","eTreg","Th2","TRM","Th17",'Th','CCL5+ CD4+ T-cell',
-                    'CD8+ TCM',"Naive_CD8_T_cell","GZMK_CD8_T_cell","GZMK_CCL3_CCL4_CD8_T_cell","GZMB_GZMH_CD8_T_cell","TEMRA",'GZMK_IL7R_CD8_T_cell')
+                    'CD8+ TCM',"Naïve_CD8_T_cell","GZMK_CD8_T_cell","GZMK_CCL3_CCL4_CD8_T_cell",
+                    'GZMK_IL7R_CD8_T_cell',"TEMRA","GZMB_GZMH_CD8_T_cell")
+celltype[!(celltype %in% unique(Idents(data_run_subset_label)))]
+unique(Idents(data_run_subset_label))[!(unique(Idents(data_run_subset_label)) %in% celltype)]
+
 celltype_factor <- gsub("\\+","",celltype_factor)
 celltype_factor<- gsub(" ","_",celltype_factor )
 celltype_factor <- gsub("-","_",celltype_factor )
