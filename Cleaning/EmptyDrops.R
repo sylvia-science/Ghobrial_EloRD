@@ -7,7 +7,6 @@ library(ggplot2)
 library(SoupX)
 source('/home/sujwary/Desktop/scRNA/Code/Plot_func.R')
 source('/home/sujwary/Desktop/scRNA/Code/Functions.R')
-
 # Run EmptyDrops on individual samples
 
 filename_metaData = '/home/sujwary/Desktop/scRNA/Data/EloRD Meta.xlsx'

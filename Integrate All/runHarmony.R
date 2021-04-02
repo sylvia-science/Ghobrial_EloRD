@@ -96,7 +96,7 @@ soup_base = '/disk2/Projects/EloRD_Nivo_Oksana/Output/Soup_MT_C100/'
 folder_name = 'EloRD_Nivo_Oksana_PBMC_noNPBMC'
 harmony_groupby = 'Sample_kit'
 sample_type = 'EloRD_Nivo_Oksana_PBMC_Sample_noNPBMC'
-base = '/disk2/Projects/EloRD_Nivo_Oksana_PBMC_noNPBMC/Harmony/'
+base = '/disk2/Projects/EloRD_Nivo_Oksana_PBMC_noNPBMC/Harmony/' # output folder
 filename_metaData = '/disk2/Projects/EloRD_Nivo_Oksana_PBMC_noNPBMC/MetaData/MetaData.csv'
 soup_base = '/disk2/Projects/EloRD_Nivo_Oksana/Output/Soup_MT_C100/'
 #filename_sampleParam_combine = '/disk2/Projects/EloRD_Nivo_Oksana_PBMC/MetaData/Parameters.csv'
@@ -175,8 +175,8 @@ if (run){
     data_i = data_i[,data_i$is_cell]
     
     # Remove features below threshold  
-    min_feature = 100
-    data_i = data_i[,data_i$nFeature_RNA > min_feature]
+    #min_feature = 100
+    #data_i = data_i[,data_i$nFeature_RNA > min_feature]
   
     
     # Remove MT > 15 already done
@@ -939,6 +939,7 @@ data_input = data_harmony_run_label[,!(Idents(data_harmony_run_label) %in%
                                          c( 0:100,'Remove', 'B-cell','Pro B-cell','Pre B-cell','Erythrocyte','Pro Erythrocyte',
                                             'Neutrophil','MK','HSC','CMPC','MDPC', 'Plasma Cell','pDC','cDC1','cDC2'))]
 
+
 data_input = data_harmony_run_label
 
 plot = DimPlot(data_input,pt.size = 0.7, reduction = "umap",label = TRUE,label.size = 8)
@@ -959,9 +960,9 @@ write.table(data_matrix_var,
             file=path, 
             quote=FALSE, sep='\t')
 
-
+#############################
 # UmapCoord and metadata
-
+##########################
 #data_input = data_harmony_run_label
 sample = as.character(data_input$sample)
 ident = as.character(Idents(data_harmony_run[,colnames(data_harmony_run_label)]))

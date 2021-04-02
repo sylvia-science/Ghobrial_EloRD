@@ -622,39 +622,10 @@ for (cluster in cluster_list){
   
   
 }
-##
-############################
-##  Plot old labels
-############################
-group = 'OldCellType'
-group = 'OldTcellLabels'
-group = 'OldNKLabels'
-group = 'OldMonoLabels'
-#data_run_subset[[group]] = factor(as.character(data_run_subset[[group]]))
-data_run_subset_remove = data_run_subset
-data_run_subset_remove = data_run_subset[,data_run_subset[[group]] !='']
 
-
-pathName <- paste0(filepath_cluster,paste0('ClusterUmap', '_PCA',PCA_dim_subset,'_res',resolution_val_subset,
-                                            '_GroupBy',group,'_label','.png'))
-png(file=pathName,width=2000, height=1000)
-
-plot = DimPlot(data_run_subset_remove, pt.size = 2, reduction = "umap",label = T,
-               group.by  = group, label.size = 12)
-plot = plot + theme(
-  axis.title.x = element_text(color="black", size=24 ),
-  axis.title.y = element_text(color="black", size=24),
-  axis.text= element_text(color="black", size=24),
-  legend.text=element_text(size=24),
-  legend.title=element_text(size=24),
-  text = element_text(size = 24)
-)
-print(plot)
-dev.off()
-
-######################
+#################################
 ### Plot DE and save pathways
-######################
+#################################
 pathways.hallmark <- gmtPathways('/home/sujwary/Desktop/scRNA/Data/GSEA/h.all.v7.2.symbols.gmt')
 pathways.c2 <- gmtPathways('/home/sujwary/Desktop/scRNA/Data/GSEA/c2.all.v7.2.symbols.gmt')
 pathways.c5 <- gmtPathways('/home/sujwary/Desktop/scRNA/Data/GSEA/c5.all.v7.2.symbols.gmt')
@@ -719,6 +690,36 @@ for (cluster in cluster_list){
   
   
 }
+##
+############################
+##  Plot old labels
+############################
+group = 'OldCellType'
+group = 'OldTcellLabels'
+group = 'OldNKLabels'
+group = 'OldMonoLabels'
+#data_run_subset[[group]] = factor(as.character(data_run_subset[[group]]))
+data_run_subset_remove = data_run_subset
+data_run_subset_remove = data_run_subset[,data_run_subset[[group]] !='']
+
+
+pathName <- paste0(filepath_cluster,paste0('ClusterUmap', '_PCA',PCA_dim_subset,'_res',resolution_val_subset,
+                                            '_GroupBy',group,'_label','.png'))
+png(file=pathName,width=2000, height=1000)
+
+plot = DimPlot(data_run_subset_remove, pt.size = 2, reduction = "umap",label = T,
+               group.by  = group, label.size = 12)
+plot = plot + theme(
+  axis.title.x = element_text(color="black", size=24 ),
+  axis.title.y = element_text(color="black", size=24),
+  axis.text= element_text(color="black", size=24),
+  legend.text=element_text(size=24),
+  legend.title=element_text(size=24),
+  text = element_text(size = 24)
+)
+print(plot)
+dev.off()
+
 
 ##########################
 ### Plot DE permutations
@@ -936,6 +937,9 @@ cell_list[!(cell_list %in% unique(Idents(data_run_subset_label)))]
 
 unique(Idents(data_run_subset_label))[!(unique(Idents(data_run_subset_label)) %in%cell_list )]
 
+#######################################
+## Save subset of data from cell_list
+#######################################
 data_input = data_run_subset_label[,Idents(data_run_subset_label) %in% cell_list]
 #data_input = data_run_subset_label
 plot = DimPlot(data_input,pt.size = 0.7, reduction = "umap",label = TRUE,label.size = 8)
@@ -953,7 +957,9 @@ path = paste0(filepath_cluster,'Data/matrix_',
 write.table(data_matrix_var, 
             file=path, 
             quote=FALSE, sep='\t')
-##
+##################
+## Save all data
+##################
 data_input = data_run_subset
 data_matrix = data_input@assays[["RNA"]]@data
 data_matrix_var = data_matrix[rownames(data_matrix) %in% data_input@assays[["RNA"]]@var.features,]
@@ -967,8 +973,9 @@ path = paste0(filepath_cluster,'Data/matrix_',
 write.table(data_matrix_var, 
             file=path, 
             quote=FALSE, sep='\t')
-
-# UmapCoord and metadata
+###############################
+# Save UmapCoord and metadata
+###############################
 data_run_subset_label =label_cells(data_run_subset,cluster_IDs_subset)
 
 sample = as.character(data_run_subset$sample)

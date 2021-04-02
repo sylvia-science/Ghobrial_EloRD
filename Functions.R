@@ -427,3 +427,94 @@ addOldLabels <- function(path,data_input, varName){
 
 }
 
+
+PlotDE = function(data_input,str = '', filepath_cluster){
+  ######################################
+  ### Plot DE genes in each cluster
+  ######################################
+  #str = ''
+  #str = '_label'
+  filepath = paste0(filepath_cluster
+                    ,'Features',str,
+                    '.csv')
+  DE = read.csv(file = filepath)
+  data_input = data_harmony_run
+  
+  
+  DE = DE[DE$p_val_adj < 0.05,]
+  DE = DE[!grepl("MT-", DE$gene),]
+  DE = DE[!grepl("^RP[SL]", DE$gene),]
+  
+  cluster_list = unique(DE$cluster)
+  
+  #cluster_list = cluster_list[4:length(cluster_list)]
+  for (cluster in cluster_list){
+    DE_cluster = DE[DE$cluster == cluster,]
+    ranks <- DE_cluster$avg_logFC
+    names(ranks) <- DE_cluster$gene
+    
+    DE_cluster = DE_cluster[DE_cluster$avg_logFC > 0 ,]
+    DE_cluster = DE_cluster[order(-DE_cluster$avg_logFC),]
+    DE_cluster = DE_cluster[1:20,]
+    
+    DE_cluster = DE_cluster[rowSums(is.na(DE_cluster)) != ncol(DE_cluster),]
+    gene_list = DE_cluster
+    
+    
+    gene_list$Cell = cluster
+    gene_list$Plot_marker = 1
+    gene_list$Markers = gene_list$gene
+    path = paste0(filepath_cluster,'DE/Cluster_',cluster,'VsAll',str,'/')
+    PlotKnownMarkers(data_input, 
+                     folder = path, 
+                     cell_features = gene_list,
+                     plotType ='FeaturePlotFix' , 
+                     prefix_logFC = T, str = '',markerSize = 1)
+    
+    
+    
+  }
+}
+
+PlotDEPerm = function(data_input, cluster_list1, cluster_list2,str = '', filepath_cluster){
+  for (cluster1 in cluster_list1){
+    #
+    cluster1 = gsub("/", "", cluster1, fixed = T)
+    filepath_mvn = paste0( filepath_cluster, 'DE/nVsm/')
+    filepath = paste0(filepath_mvn
+                      ,'Features_',cluster1,'Vsn',str,
+                      '.csv')
+    DE_cluster = read.csv(file = filepath)
+    
+    for (cluster2 in cluster_list2){
+      #data_cluster  = data_run_subset[, Idents(data_run_subset) == cluster]
+      #print(cluster)
+      #print(summary(data_cluster$origIdent))
+      cluster2 = gsub("/", "", cluster2, fixed = T)
+      DE_cluster_m = DE_cluster[DE_cluster$ident_2 == cluster2,]
+      DE_cluster_m = DE_cluster_m[order(-abs(DE_cluster_m$avg_logFC )),]
+      DE_cluster_m = DE_cluster_m[DE_cluster_m$p_val_adj < 0.05 & DE_cluster_m$avg_logFC > 0 ,]
+      DE_cluster_m = DE_cluster_m[!grepl("MT-", DE_cluster_m$gene),]
+      DE_cluster_m = DE_cluster_m[!grepl("^RP[SL]", DE_cluster_m$gene),]
+      
+      gene_list = DE_cluster_m[1:20,]
+      gene_list = (gene_list[!rowSums(is.na(gene_list)) == ncol(gene_list),])
+      gene_list$Markers = gene_list$gene
+      #colnames(gene_list)[grepl("gene", colnames(gene_list))] <- "Markers"
+      
+      #next
+      if (nrow(gene_list) > 0){
+        gene_list$Cell = paste0(cluster1,'Vs',cluster2)
+        gene_list$Plot_marker = 1
+        path = paste0(filepath_mvn,'FeaturePlot/Cluster',cluster1,str,'/')
+        PlotKnownMarkers(data_input, 
+                         folder = path, 
+                         cell_features = gene_list,
+                         plotType ='FeaturePlotFix' , 
+                         str = '',markerSize = 2, prefix_logFC = T)
+      }
+    }
+    
+    
+  }
+}

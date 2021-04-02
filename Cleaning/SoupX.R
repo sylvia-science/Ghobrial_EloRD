@@ -11,8 +11,8 @@ source('/home/sujwary/Desktop/scRNA/Code/Functions.R')
 #######################################
 ## Run soupx on individual samples
 #######################################
-output_folder = '/disk2/Projects/EloRD_Nivo_Oksana/Output/Soup_MT_C100/'
-output_folder = '/disk2/Projects/MMRF/Output/Soup_MT_C100/'
+output_folder = '/disk2/Projects/EloRD_Nivo_Oksana/Output/Soup_MT_C100/' #output data
+#output_folder = '/disk2/Projects/MMRF/Output/Soup_MT_C100/'
 
 data_folder = "/home/sujwary/Desktop/scRNA/Data/"
 filename_metaData = '/home/sujwary/Desktop/scRNA/Data/EloRD Meta.xlsx'
@@ -23,7 +23,7 @@ filename_metaData = '/disk2/Projects/EloRD_Nivo_PBMC/MetaData/metaData_EloRD_Niv
 data_folder = '/disk2/Projects/EloRD_Nivo_Oksana/Data/'
 filename_metaData = '/disk2/Projects/EloRD_Nivo_Oksana/MetaData/10X Sequenced Samples.xlsx'
 
-data_folder = '/disk2/Projects/EloRD_Nivo_Oksana/Data/'
+data_folder = '/disk2/Projects/EloRD_Nivo_Oksana/Data/' # input data
 filename_metaData = '/disk2/Projects/MMRF/MetaData/MetaData.csv'
 
 
@@ -42,7 +42,6 @@ run = T
 sample_name = 'pM5639'
 
 # Soup + MT + Normal threshold
-
 for (i in 1:nrow(metaData)){
   sample_name = metaData$Sample[i]
   print(sample_name)
@@ -87,10 +86,7 @@ for (i in 1:nrow(metaData)){
   keep = colSum_list >= 100
   print(sum(keep))
   print(sum(!keep))
-  if (sum(!keep) < 3){
-    mincount = 200
-    
-  }
+
   
   # If any NA genes, remove
   data_i_raw = data_i_raw[!is.na(rownames(data_i_raw)),]
@@ -123,8 +119,7 @@ for (i in 1:nrow(metaData)){
   percent_MT_list = data_i_filtered$percent.mt
   # If min sum of counts per cell is less than 200, proceed normally
   # Else skip soupx (Happens only if sample has already been filtered)
-  if (countSum_min <= 200){
-  
+    print('Continue normally min number of min counts per cell < 200')
     data_i_filtered_run = NormalizeData(data_i_filtered, normalization.method = "LogNormalize", scale.factor = 10000)
     #data_i_filtered_run = ScranNorm(data_i_filtered)
     data_i_filtered_run = FindVariableFeatures(data_i_filtered_run, selection.method = "vst", nfeatures = 2000)
@@ -204,44 +199,7 @@ for (i in 1:nrow(metaData)){
     
     data_i_filtered_soup@assays[["RNA"]]@counts = out
     
-  }else{
-    data_i_filtered_run = NormalizeData(data_i_filtered, normalization.method = "LogNormalize", scale.factor = 10000)
-    #data_i_filtered_run = ScranNorm(data_i_filtered)
-    data_i_filtered_run = FindVariableFeatures(data_i_filtered_run, selection.method = "vst", nfeatures = 2000)
-    data_i_filtered_run = ScaleData(data_i_filtered_run)
-    data_i_filtered_run = RunPCA(data_i_filtered_run,npcs = 30)
-    data_i_filtered_run = FindNeighbors(data_i_filtered_run, dims = 1:30)
-    data_i_filtered_run = FindClusters(data_i_filtered_run)
-    data_i_filtered_run = RunUMAP(data_i_filtered_run, dims = 1:30)
-    
-    folder = paste0(output_folder,sample_name,'/')
-    dir.create(folder, recursive = T)
-    
-    print('Plot')
-    folder = paste0(output_folder,sample_name,'/')
-    dir.create(folder, recursive = T)
-    pathName = paste0(folder,sample_name,'_PreSoup_Umap','','.png')
-    png(file=pathName,width=1000, height=1000)
-    print(  DimPlot(data_i_filtered_run,pt.size = 0.5, reduction = "umap",label = FALSE))
-    dev.off()
-    
-    pathName = paste0(folder,sample_name,'_PreSoup_Umap','_percent.mt','.png')
-    png(file=pathName,width=1000, height=1000)
-    print(FeaturePlot(data_i_filtered_run,pt.size = 0.5, reduction = "umap", features = 'percent.mt'))
-    dev.off()
-    
-    pathName = paste0(folder,sample_name,'_PreSoup_Umap','_nFeature_RNA','.png')
-    png(file=pathName,width=1000, height=1000)
-    print(FeaturePlot(data_i_filtered_run,pt.size = 0.5, reduction = "umap", features = 'nFeature_RNA'))
-    dev.off()
-    
-    
-    
-    # Put soup data back into filtered run
-    data_i_filtered_soup = data_i_filtered
-    
-  }
-###################################
+ ########################
  
   # Plot relevant genes before soup
   gene_list = c('CD3D', 'CD3G', 'CD3E', 'CD8A', 'CD8B', 'IL7R', 'SELL', 'CD14', 'FCGR3A', 'NKG7', 'MS4A1', 'IGKC', 'IGHM', 'CD19', 'MZB1', 'CD34', 'CDK6',

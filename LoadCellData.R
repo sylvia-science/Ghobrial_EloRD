@@ -56,7 +56,7 @@ load_emptyDrops <- function(data,base) {
 }
 
 
-load_Doublets <- function(data) {
+load_Doublets <- function(data, folder) {
   data$scrublet = F
   data$doublet_finder = F
   data$scran_doublet = F
@@ -73,7 +73,7 @@ load_Doublets <- function(data) {
     print(sample_name)
     #browser()
     #threshold=  sampleParam$Scrublet_threshold[sampleParam['Sample'] == sample_name]
-    path = paste0('/home/sujwary/Desktop/scRNA/Output/Doublet4Methods/',sample_name,'/doublet_summary','.csv')
+    path = paste0(folder,sample_name,'/doublet_summary','.csv')
     #browser()
     if (!file.exists(path)){
       print('No Doublet file found')

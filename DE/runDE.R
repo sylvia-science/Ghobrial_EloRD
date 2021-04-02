@@ -6,6 +6,9 @@ font_size= 32
 label_size = 12
 gene_height = 80
 
+########################
+## Run DE
+########################
 data_input = data_run_subset_label
 #data_input = data_run_subset_label_remove
 data_input = ScaleData(data_input, features = rownames(data_input))
@@ -19,6 +22,7 @@ celltype_list = sort(unique(as.character(Idents(data_input))))
 celltype_list
 
 celltype_num = sort(table(as.character(Idents(data_input))))
+
 
 celltype_list=  c('CD14+ Mono','TRM','Naive CD4+ T-cell','Naive CD8+ T-cell','GZMK+ CD8+ T-cell',
                   'cTreg','CD56Br NK','Th17','Inhibitory NK','TEMRA','DC',
@@ -50,19 +54,13 @@ for (celltype in celltype_list){
   #ident2 = paste0('CD14+ Mono')
   
   DE_input = data_input
-  #DE_input = renameCells(DE_input,idents = c('TIMP1+ CD14+ Mono','SELL+ CD14+ Mono'),
-  #                       newident = 'CD14+ Mono')
-  #DE_input$Best_Overall_Response[DE_input$Best_Overall_Response == 'MR' ] = 'PR'
-  #DE_input$Best_Overall_Response[DE_input$Best_Overall_Response %in% c('VGPR','CR','sCR') ] = 'GR'
+
   
   DE_input$DE_ident = paste0(DE_input$Treatment, ' ', 
                             DE_input$Best_Overall_Response, ' ', Idents(DE_input))
-  #DE_input$DE_ident = paste0(DE_input$Treatment,' ',DE_input$'Dexa or not', ' ', Idents(DE_input))
   DE_input$DE_ident = paste0(DE_input$Treatment,' ', Idents(DE_input))
   
-  #print(table(Idents(DE_input),DE_input$Treatment))
-  #DE_input$DE_ident = paste0(Idents(DE_input))
-  #DE_input = DE_input[,DE_input$Treatment =='baseline']
+
   DE_input = DE_input[,Idents(DE_input) %in% c(celltype)]
   DE_input = DE_input[,DE_input$DE_ident %in% c(ident1,ident2)]
   ncol(DE_input)
@@ -74,6 +72,8 @@ for (celltype in celltype_list){
   print(IdentPerPatient)
   patient_names = rownames(IdentPerPatient)
   
+  # If NBM or response is in the idents, have min number of 30 cells in each category
+  # If comparing Baseline to C9D1, have min number of 30 cells in each of the two categories
   if (grepl('NBM', ident1, fixed = TRUE) | grepl('NBM', ident2, fixed = TRUE) |
       grepl(' PR ', ident2, fixed = TRUE)  ){
     patient_keep = patient_names[rowSums(IdentPerPatient >= 30) == 1]
@@ -81,7 +81,7 @@ for (celltype in celltype_list){
     patient_keep = patient_names[rowSums(IdentPerPatient >= 30) == 2]
   }
   
-
+  # If only two patients to comapare 
   if (length(patient_keep) < 2){
     print('Not enough patients')
     next
